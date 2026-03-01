@@ -1,0 +1,1654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Nassau">
+<meta name="theme-color" content="#0a1a0a">
+<title>Nassau</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+
+/* ═══════════════════════════════════
+   DESIGN TOKENS
+═══════════════════════════════════ */
+:root {
+  --ink:       #0a1a0a;
+  --ink-mid:   #162416;
+  --ink-light: #243824;
+  --moss:      #3d6b3d;
+  --sage:      #6b9e6b;
+  --gold:      #c8a84b;
+  --gold-warm: #e2c97e;
+  --gold-pale: #f5e9c8;
+  --parch:     #f0ebe0;
+  --parch-mid: #d9d0bc;
+  --parch-dim: #b8af9a;
+  --white:     #ffffff;
+  --red:       #b84040;
+  --red-soft:  #d97373;
+  --r: 14px;
+  --safe-top: env(safe-area-inset-top, 44px);
+  --safe-bot: env(safe-area-inset-bottom, 34px);
+}
+
+/* ═══════════════════════════════════
+   RESET & BASE
+═══════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html { font-size: 16px; -webkit-text-size-adjust: 100%; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--ink);
+  color: var(--parch);
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ═══════════════════════════════════
+   SCREENS
+═══════════════════════════════════ */
+.screen {
+  display: none;
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  flex-direction: column;
+  position: relative;
+}
+.screen.active { display: flex; }
+
+/* ═══════════════════════════════════
+   SCROLLABLE BODY AREAS
+═══════════════════════════════════ */
+.scroll-body {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 20px 18px calc(32px + var(--safe-bot));
+}
+
+/* ═══════════════════════════════════
+   APP HEADER — used on multiple screens
+═══════════════════════════════════ */
+.app-header {
+  padding: calc(var(--safe-top) + 14px) 22px 18px;
+  background: linear-gradient(180deg, var(--ink) 0%, var(--ink-mid) 100%);
+  border-bottom: 1px solid rgba(200,168,75,0.2);
+  position: relative; flex-shrink: 0;
+}
+.app-header::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 60% 80% at 50% -10%, rgba(200,168,75,0.07) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hdr-eyebrow {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 5px;
+}
+.hdr-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 32px; font-weight: 700; line-height: 1.05;
+  color: var(--parch);
+}
+.hdr-title em { color: var(--gold); font-style: italic; }
+.hdr-sub {
+  font-size: 11px; color: var(--parch-dim);
+  margin-top: 4px; letter-spacing: 0.2px;
+}
+
+/* ═══════════════════════════════════
+   SECTION LABEL
+═══════════════════════════════════ */
+.sec-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 8px; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--gold); margin: 22px 0 10px;
+}
+.field-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
+  color: rgba(240,235,224,0.4); margin-bottom: 5px;
+}
+
+/* ═══════════════════════════════════
+   CARDS
+═══════════════════════════════════ */
+.card {
+  background: rgba(255,255,255,0.035);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: var(--r);
+  padding: 14px;
+  margin-bottom: 10px;
+}
+.card.gold { border-color: rgba(200,168,75,0.22); }
+
+/* ═══════════════════════════════════
+   COURSE SELECTOR
+═══════════════════════════════════ */
+.course-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.course-tile {
+  border-radius: var(--r);
+  border: 2px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  padding: 16px 12px; cursor: pointer;
+  text-align: center; transition: all 0.2s;
+  position: relative; overflow: hidden;
+}
+.course-tile::after {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(200,168,75,0.06) 0%, transparent 70%);
+  opacity: 0; transition: opacity 0.2s;
+}
+.course-tile.selected { border-color: var(--gold); background: rgba(200,168,75,0.06); }
+.course-tile.selected::after { opacity: 1; }
+.ct-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 20px; font-weight: 700;
+  color: var(--parch); margin-bottom: 3px; position: relative; z-index: 1;
+}
+.course-tile.selected .ct-name { color: var(--gold); }
+.ct-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 8px; letter-spacing: 1px;
+  color: rgba(240,235,224,0.35); position: relative; z-index: 1;
+}
+.ct-par {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; color: rgba(240,235,224,0.45);
+  margin-top: 6px; position: relative; z-index: 1;
+}
+
+/* ═══════════════════════════════════
+   SEGMENT CONTROLS
+═══════════════════════════════════ */
+.seg-wrap {
+  display: flex;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 10px; padding: 3px; gap: 2px;
+}
+.seg-btn {
+  flex: 1; padding: 9px 4px;
+  background: transparent; border: none;
+  color: rgba(240,235,224,0.4);
+  font-family: 'DM Mono', monospace; font-size: 13px;
+  border-radius: 8px; cursor: pointer; transition: all 0.15s;
+}
+.seg-btn.on {
+  background: var(--gold);
+  color: var(--ink); font-weight: 600;
+  box-shadow: 0 2px 8px rgba(200,168,75,0.3);
+}
+
+/* ═══════════════════════════════════
+   FORMAT GRID
+═══════════════════════════════════ */
+.format-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+
+/* ═══════════════════════════════════
+   FORMAT SUMMARY PILL
+═══════════════════════════════════ */
+.format-pill {
+  background: rgba(200,168,75,0.07);
+  border: 1px solid rgba(200,168,75,0.18);
+  border-radius: 8px; padding: 9px 12px;
+  margin-top: 10px;
+}
+.fp-label { font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: 1.5px; color: var(--gold); text-transform: uppercase; margin-bottom: 3px; }
+.fp-value { font-size: 13px; color: var(--parch); }
+
+/* ═══════════════════════════════════
+   ENTRY MODE TILES
+═══════════════════════════════════ */
+.mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.mode-tile {
+  border-radius: var(--r); border: 2px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03); padding: 16px 10px;
+  cursor: pointer; text-align: center; transition: all 0.2s;
+}
+.mode-tile.selected { border-color: var(--gold); background: rgba(200,168,75,0.06); }
+.mode-icon { font-size: 28px; margin-bottom: 8px; }
+.mode-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 17px; font-weight: 700; color: var(--parch); margin-bottom: 3px;
+}
+.mode-tile.selected .mode-name { color: var(--gold); }
+.mode-sub { font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: 1px; color: rgba(240,235,224,0.35); }
+
+/* ═══════════════════════════════════
+   INPUTS
+═══════════════════════════════════ */
+input[type=text], input[type=number] {
+  width: 100%;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px; padding: 10px 13px;
+  color: var(--parch);
+  font-family: 'DM Sans', sans-serif; font-size: 15px;
+  outline: none; -webkit-appearance: none;
+  transition: border-color 0.15s;
+}
+input:focus { border-color: var(--gold); background: rgba(200,168,75,0.05); }
+input::placeholder { color: rgba(240,235,224,0.2); }
+
+/* ═══════════════════════════════════
+   TEAM CARDS
+═══════════════════════════════════ */
+.team-chip { display: inline-block; width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.team-card {
+  border-radius: var(--r); padding: 14px;
+  margin-bottom: 12px;
+  border: 1px solid rgba(255,255,255,0.07);
+  background: rgba(255,255,255,0.025);
+}
+.team-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.team-card-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 18px; font-weight: 700;
+  display: flex; align-items: center; gap: 8px;
+}
+.player-row { display: grid; grid-template-columns: 1fr 58px 32px; gap: 7px; align-items: flex-end; margin-bottom: 8px; }
+
+/* ═══════════════════════════════════
+   BUTTONS
+═══════════════════════════════════ */
+.btn-primary {
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; padding: 16px;
+  background: linear-gradient(135deg, var(--gold) 0%, var(--gold-warm) 100%);
+  color: var(--ink);
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 20px; font-weight: 700; letter-spacing: 0.3px;
+  border: none; border-radius: var(--r); cursor: pointer;
+  box-shadow: 0 4px 24px rgba(200,168,75,0.3);
+  transition: transform 0.1s, box-shadow 0.1s;
+  -webkit-appearance: none;
+}
+.btn-primary:active { transform: scale(0.98); box-shadow: 0 2px 12px rgba(200,168,75,0.2); }
+.btn-primary:disabled { opacity: 0.45; }
+
+.btn-secondary {
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; padding: 14px;
+  background: transparent;
+  border: 1px solid rgba(200,168,75,0.35);
+  color: var(--gold);
+  font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 1.5px;
+  border-radius: var(--r); cursor: pointer; text-transform: uppercase;
+  transition: background 0.15s;
+}
+.btn-secondary:active { background: rgba(200,168,75,0.07); }
+
+.btn-ghost {
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; padding: 11px;
+  background: transparent;
+  border: 1px dashed rgba(255,255,255,0.15);
+  color: rgba(240,235,224,0.45);
+  font-family: 'DM Mono', monospace; font-size: 11px;
+  border-radius: 10px; cursor: pointer; margin-top: 6px;
+}
+
+.btn-icon-danger {
+  background: rgba(184,64,64,0.12);
+  border: 1px solid rgba(184,64,64,0.25);
+  color: var(--red-soft);
+  width: 32px; height: 32px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px; cursor: pointer; flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════
+   UPLOAD SCREEN
+═══════════════════════════════════ */
+.upload-drop {
+  border: 2px dashed rgba(200,168,75,0.3);
+  border-radius: var(--r); padding: 32px 20px;
+  text-align: center; cursor: pointer;
+  background: rgba(200,168,75,0.025);
+  margin-bottom: 12px; position: relative;
+  transition: all 0.2s;
+}
+.upload-drop:active { background: rgba(200,168,75,0.06); }
+.upload-drop input[type=file] { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
+.ud-icon { font-size: 40px; margin-bottom: 10px; }
+.ud-title { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 700; color: var(--gold); margin-bottom: 4px; }
+.ud-sub { font-size: 12px; color: var(--parch-dim); }
+
+.scorecard-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(200,168,75,0.2);
+  border-radius: var(--r); margin-bottom: 10px; overflow: hidden;
+}
+.sc-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: rgba(200,168,75,0.06); }
+.sc-title { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1px; color: var(--gold); }
+.sc-status { font-size: 11px; display: flex; align-items: center; gap: 5px; }
+.sc-status.reading { color: #f6ad55; }
+.sc-status.done { color: #68d391; }
+.sc-status.error { color: var(--red-soft); }
+.sc-thumb { width: 100%; max-height: 110px; object-fit: cover; }
+.sc-players { padding: 8px 14px 10px; }
+.sc-player-line { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--parch-dim); padding: 2px 0; }
+
+/* SPINNER */
+.spin { display: inline-block; width: 12px; height: 12px; border: 2px solid rgba(246,173,85,0.25); border-top-color: #f6ad55; border-radius: 50%; animation: rot 0.7s linear infinite; }
+@keyframes rot { to { transform: rotate(360deg); } }
+
+/* ═══════════════════════════════════
+   REVIEW SCREEN
+═══════════════════════════════════ */
+.review-group { margin-bottom: 18px; }
+.review-group-label {
+  font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: 2.5px;
+  text-transform: uppercase; color: var(--gold); margin-bottom: 8px;
+}
+.review-player-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: var(--r); margin-bottom: 8px; overflow: hidden;
+}
+.rpc-header { background: rgba(255,255,255,0.04); padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; }
+.rpc-name { font-size: 15px; font-weight: 600; }
+.rpc-hcp-wrap { display: flex; align-items: center; gap: 6px; }
+.rpc-hcp-label { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--parch-dim); }
+.rpc-hcp-input { width: 44px; padding: 4px 6px; font-size: 13px; text-align: center; border-radius: 6px; }
+.scores-9 { display: grid; grid-template-columns: repeat(9, 1fr); gap: 3px; padding: 10px 10px 4px; }
+.scores-divider { text-align: center; font-family: 'DM Mono', monospace; font-size: 8px; color: rgba(240,235,224,0.25); padding: 2px 0; letter-spacing: 2px; }
+.score-hole-label { font-family: 'DM Mono', monospace; font-size: 7px; color: rgba(240,235,224,0.3); text-align: center; margin-bottom: 2px; }
+.score-hole-input {
+  width: 100%; padding: 5px 2px; text-align: center;
+  font-family: 'Cormorant Garamond', serif; font-size: 16px; font-weight: 700;
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 5px; color: var(--parch);
+}
+.score-hole-input:focus { border-color: var(--gold); background: rgba(200,168,75,0.08); outline: none; }
+
+/* ═══════════════════════════════════
+   RECONCILE SCREEN
+═══════════════════════════════════ */
+.recon-team-card {
+  border-radius: var(--r); padding: 13px 14px;
+  margin-bottom: 10px;
+  border: 1px solid rgba(255,255,255,0.07);
+  background: rgba(255,255,255,0.025);
+}
+.rtc-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.rtc-name-input {
+  background: transparent; border: none; outline: none;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 18px; font-weight: 700; color: var(--parch);
+  width: 140px; padding: 0;
+}
+.rtc-count { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--parch-dim); }
+.rtc-players { display: flex; flex-wrap: wrap; gap: 6px; min-height: 28px; }
+.player-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px; padding: 4px 10px; font-size: 12px;
+}
+.player-chip .chip-remove { background: none; border: none; color: rgba(240,235,224,0.35); cursor: pointer; font-size: 15px; padding: 0; line-height: 1; margin-left: 2px; }
+.empty-team { font-family: 'DM Mono', monospace; font-size: 9px; color: rgba(240,235,224,0.2); padding: 4px 0; }
+
+.pool-section { margin-bottom: 18px; }
+.pool-player {
+  display: flex; align-items: center; justify-content: space-between;
+  background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 10px; padding: 10px 14px; margin-bottom: 7px;
+}
+.pp-info .pp-name { font-size: 14px; font-weight: 500; }
+.pp-info .pp-sub { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--parch-dim); margin-top: 2px; }
+.team-mini-select {
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px; padding: 6px 10px; color: var(--parch);
+  font-family: 'DM Mono', monospace; font-size: 11px;
+  outline: none; -webkit-appearance: none; cursor: pointer; min-width: 90px;
+}
+.team-mini-select:focus { border-color: var(--gold); }
+
+/* ═══════════════════════════════════
+   SCORING SCREEN
+═══════════════════════════════════ */
+.scoring-header {
+  padding: calc(var(--safe-top) + 10px) 18px 14px;
+  background: var(--ink);
+  border-bottom: 1px solid rgba(200,168,75,0.18);
+  flex-shrink: 0;
+}
+.hole-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.hole-nav-btn {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--gold); font-size: 22px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s;
+}
+.hole-nav-btn:disabled { opacity: 0.2; }
+.hole-nav-btn:active { background: rgba(200,168,75,0.12); }
+.hole-center { text-align: center; }
+.hole-big {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 30px; font-weight: 700; color: var(--gold); line-height: 1;
+}
+.hole-meta { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--parch-dim); letter-spacing: 1px; margin-top: 3px; }
+.hole-format { font-family: 'DM Mono', monospace; font-size: 8px; color: rgba(200,168,75,0.6); letter-spacing: 0.5px; margin-top: 2px; }
+.progress-track { display: flex; gap: 2px; margin-top: 10px; }
+.prog-dot { flex: 1; height: 2px; border-radius: 2px; background: rgba(255,255,255,0.07); transition: background 0.3s; }
+.prog-dot.done { background: var(--gold); }
+.prog-dot.now { background: var(--sage); }
+
+.score-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 14px 16px 170px; }
+
+/* TEAM BLOCK */
+.team-block { margin-bottom: 12px; border-radius: var(--r); overflow: hidden; border: 1px solid rgba(255,255,255,0.07); }
+.team-block-hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 9px 14px; background: rgba(255,255,255,0.04);
+}
+.tbh-name { font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+.tbh-score { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--parch-dim); }
+.tbh-score b { color: var(--gold); font-size: 11px; }
+
+.player-score-row {
+  display: grid; grid-template-columns: 1fr 16px 86px 28px;
+  gap: 6px; align-items: center;
+  padding: 9px 14px; border-top: 1px solid rgba(255,255,255,0.04);
+}
+.player-score-row.stroker { background: rgba(200,168,75,0.03); }
+.psr-info .psr-name { font-size: 13px; font-weight: 500; }
+.psr-info .psr-hcp { font-family: 'DM Mono', monospace; font-size: 8px; color: rgba(240,235,224,0.3); }
+.stroke-pip { color: var(--gold); font-size: 9px; text-align: center; }
+.stepper { display: flex; align-items: center; }
+.step-btn {
+  width: 28px; height: 34px; border-radius: 7px;
+  background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1);
+  color: var(--parch); font-size: 18px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; line-height: 1;
+  transition: background 0.1s;
+}
+.step-btn:active { background: rgba(255,255,255,0.15); }
+.step-num {
+  width: 30px; text-align: center;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px; font-weight: 700;
+}
+.step-num.eagle { color: #f6e05e; }
+.step-num.birdie { color: #f6ad55; }
+.step-num.par { color: var(--sage); }
+.step-num.bogey { color: var(--parch); }
+.step-num.double { color: #fc8181; }
+.step-num.worse { color: var(--red-soft); }
+.net-label { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--gold); text-align: center; }
+
+.contrib-tag {
+  font-family: 'DM Mono', monospace; font-size: 7px; letter-spacing: 0.5px;
+  padding: 1px 4px; border-radius: 3px; margin-left: 4px; vertical-align: middle;
+  display: inline-block;
+}
+.contrib-tag.net { background: rgba(104,211,145,0.12); color: #68d391; border: 1px solid rgba(104,211,145,0.25); }
+.contrib-tag.gross { background: rgba(99,179,237,0.12); color: #63b3ed; border: 1px solid rgba(99,179,237,0.25); }
+
+/* ═══════════════════════════════════
+   NASSAU FIXED BAR
+═══════════════════════════════════ */
+.nassau-bar {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+  background: linear-gradient(180deg, rgba(10,26,10,0.96) 0%, var(--ink) 100%);
+  border-top: 1px solid rgba(200,168,75,0.35);
+  padding: 10px 16px calc(12px + var(--safe-bot));
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+.nb-eyebrow {
+  font-family: 'DM Mono', monospace; font-size: 7px; letter-spacing: 2.5px;
+  text-transform: uppercase; color: var(--gold); text-align: center; margin-bottom: 7px;
+}
+.nb-matchups { display: flex; gap: 5px; overflow-x: auto; margin-bottom: 8px; scrollbar-width: none; }
+.nb-matchups::-webkit-scrollbar { display: none; }
+.nb-cell {
+  flex: 1; min-width: 72px; max-width: 140px;
+  background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 8px; padding: 6px 6px; text-align: center;
+}
+.nb-label { font-family: 'DM Mono', monospace; font-size: 7px; color: rgba(240,235,224,0.3); margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nb-val { font-family: 'Cormorant Garamond', serif; font-size: 13px; font-weight: 700; }
+.nb-val.tied { color: var(--gold); }
+.nb-scores-row { font-family: 'DM Mono', monospace; font-size: 8px; color: rgba(240,235,224,0.4); margin-top: 1px; }
+
+/* ═══════════════════════════════════
+   RESULTS SCREEN
+═══════════════════════════════════ */
+.results-hero { text-align: center; padding: 24px 0 28px; }
+.rh-label { font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: 3px; text-transform: uppercase; color: var(--gold); margin-bottom: 8px; }
+.rh-winner { font-family: 'Cormorant Garamond', serif; font-size: 38px; font-weight: 700; line-height: 1.1; }
+.rh-sub { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--parch-dim); margin-top: 6px; }
+
+.payout-card { background: rgba(255,255,255,0.025); border: 1px solid rgba(200,168,75,0.18); border-radius: var(--r); overflow: hidden; margin-bottom: 12px; }
+.pc-header { background: rgba(200,168,75,0.07); padding: 8px 14px; font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.pc-row { display: flex; justify-content: space-between; align-items: center; padding: 11px 14px; border-top: 1px solid rgba(255,255,255,0.04); font-size: 14px; }
+.pc-row .label { color: rgba(240,235,224,0.6); display: flex; align-items: center; gap: 5px; }
+.pc-row .val { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 700; }
+.val.win { color: #68d391; }
+.val.lose { color: #fc8181; }
+.val.push { color: var(--gold); }
+
+.tab-row {
+  display: flex; background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 10px; padding: 3px; margin-bottom: 12px;
+}
+.tab-btn {
+  flex: 1; padding: 9px 4px; background: transparent; border: none;
+  color: rgba(240,235,224,0.4); font-family: 'DM Mono', monospace;
+  font-size: 9px; letter-spacing: 0.5px; text-transform: uppercase;
+  border-radius: 8px; cursor: pointer; transition: all 0.15s;
+}
+.tab-btn.on { background: var(--gold); color: var(--ink); font-weight: 600; }
+
+.holes-table { width: 100%; border-collapse: collapse; font-size: 10px; font-family: 'DM Mono', monospace; }
+.holes-table th { background: rgba(200,168,75,0.07); color: var(--gold); padding: 7px 4px; text-align: center; font-size: 8px; letter-spacing: 1px; }
+.holes-table td { padding: 7px 4px; text-align: center; border-top: 1px solid rgba(255,255,255,0.04); color: var(--parch); }
+.holes-table tr:nth-child(even) td { background: rgba(255,255,255,0.015); }
+.ht-win { color: #68d391; font-weight: 600; }
+.ht-tie { color: var(--gold); }
+
+/* ═══════════════════════════════════
+   MODAL
+═══════════════════════════════════ */
+.modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 300; display: flex; align-items: flex-end; }
+.modal-bg.hidden { display: none; }
+.modal-sheet {
+  background: var(--ink-mid); border-radius: 22px 22px 0 0;
+  padding: 24px 20px calc(28px + var(--safe-bot));
+  width: 100%; border-top: 1.5px solid rgba(200,168,75,0.3);
+  box-shadow: 0 -20px 60px rgba(0,0,0,0.5);
+}
+.modal-title { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 700; color: var(--gold); margin-bottom: 16px; }
+.modal-2col { display: grid; grid-template-columns: 1fr 70px; gap: 8px; margin-bottom: 12px; }
+.modal-team-opts { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.modal-team-opt {
+  padding: 8px 14px; border-radius: 20px;
+  border: 1.5px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.03);
+  color: var(--parch); font-size: 13px; cursor: pointer;
+  display: flex; align-items: center; gap: 6px; transition: all 0.15s;
+}
+.modal-team-opt.on { border-color: var(--gold); background: rgba(200,168,75,0.08); color: var(--gold); }
+
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════
+     SCREEN · SETUP
+════════════════════════════════ -->
+<div id="scr-setup" class="screen active">
+  <div class="app-header">
+    <div class="hdr-eyebrow">Fair Oaks Ranch</div>
+    <h1 class="hdr-title">Nassau <em>Golf</em></h1>
+    <p class="hdr-sub">$1 Front · $1 Back · $1 Overall · $1 / Skin</p>
+  </div>
+  <div class="scroll-body">
+
+    <!-- COURSE -->
+    <div class="sec-label">Course</div>
+    <div class="course-grid">
+      <div class="course-tile selected" id="ctile-liveoak" onclick="selectCourse('liveoak')">
+        <div class="ct-name">Live Oak</div>
+        <div class="ct-sub">GARY PLAYER · 1978</div>
+        <div class="ct-par">Par 72</div>
+      </div>
+      <div class="course-tile" id="ctile-blackjack" onclick="selectCourse('blackjack')">
+        <div class="ct-name">Blackjack</div>
+        <div class="ct-sub">PLAYER · GRIFFITH</div>
+        <div class="ct-par">Par 72</div>
+      </div>
+    </div>
+
+    <!-- FORMAT -->
+    <div class="sec-label">Format</div>
+    <div class="card gold">
+      <div class="format-2col">
+        <div>
+          <div class="field-label">Net Scores</div>
+          <div class="seg-wrap" id="seg-net">
+            <button class="seg-btn on" data-v="1" onclick="setSeg('net',this)">1</button>
+            <button class="seg-btn" data-v="2" onclick="setSeg('net',this)">2</button>
+            <button class="seg-btn" data-v="3" onclick="setSeg('net',this)">3</button>
+            <button class="seg-btn" data-v="4" onclick="setSeg('net',this)">4</button>
+            <button class="seg-btn" data-v="5" onclick="setSeg('net',this)">5</button>
+          </div>
+        </div>
+        <div>
+          <div class="field-label">Gross Scores</div>
+          <div class="seg-wrap" id="seg-gross">
+            <button class="seg-btn on" data-v="1" onclick="setSeg('gross',this)">1</button>
+            <button class="seg-btn" data-v="2" onclick="setSeg('gross',this)">2</button>
+            <button class="seg-btn" data-v="3" onclick="setSeg('gross',this)">3</button>
+            <button class="seg-btn" data-v="4" onclick="setSeg('gross',this)">4</button>
+            <button class="seg-btn" data-v="5" onclick="setSeg('gross',this)">5</button>
+          </div>
+        </div>
+      </div>
+      <div class="field-label">Skins</div>
+      <div class="seg-wrap" id="seg-skins">
+        <button class="seg-btn on" data-v="none" onclick="setSeg('skins',this)">None</button>
+        <button class="seg-btn" data-v="gross" onclick="setSeg('skins',this)">Gross</button>
+        <button class="seg-btn" data-v="net" onclick="setSeg('skins',this)">Net</button>
+      </div>
+      <div class="format-pill">
+        <div class="fp-label">This week</div>
+        <div class="fp-value" id="fp-text">1 Net + 1 Gross per hole · No skins</div>
+      </div>
+    </div>
+
+    <!-- ENTRY MODE -->
+    <div class="sec-label">Score Entry</div>
+    <div class="mode-grid">
+      <div class="mode-tile selected" id="mtile-photo" onclick="selectMode('photo')">
+        <div class="mode-icon">📷</div>
+        <div class="mode-name">Photo</div>
+        <div class="mode-sub">AFTER ROUND</div>
+      </div>
+      <div class="mode-tile" id="mtile-manual" onclick="selectMode('manual')">
+        <div class="mode-icon">✏️</div>
+        <div class="mode-name">Manual</div>
+        <div class="mode-sub">HOLE BY HOLE</div>
+      </div>
+    </div>
+
+    <!-- MANUAL TEAMS (hidden until manual mode) -->
+    <div id="manual-section" style="display:none;">
+      <div class="sec-label">Teams</div>
+      <div id="manual-teams"></div>
+      <button class="btn-ghost" onclick="addManualTeam()">+ Add Team</button>
+    </div>
+
+    <div style="height:18px;"></div>
+    <button class="btn-primary" id="begin-btn" onclick="begin()">Upload Scorecards →</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     SCREEN · UPLOAD
+════════════════════════════════ -->
+<div id="scr-upload" class="screen">
+  <div class="app-header">
+    <div class="hdr-eyebrow" id="upload-badge">Live Oak · Photo Upload</div>
+    <h1 class="hdr-title">Upload <em>Cards</em></h1>
+    <p class="hdr-sub">One photo per foursome · AI reads scores automatically</p>
+  </div>
+  <div class="scroll-body">
+    <p style="font-size:12px;color:var(--parch-dim);margin-bottom:16px;line-height:1.6;">
+      Take a clear photo of each foursome's scorecard. The AI will extract all player names, handicaps, and hole scores. You'll review and correct before building teams.
+    </p>
+    <div id="upload-list"></div>
+    <div class="upload-drop">
+      <input type="file" accept="image/*" capture="environment" onchange="onFileSelected(this)">
+      <div class="ud-icon">📋</div>
+      <div class="ud-title">Add Scorecard</div>
+      <div class="ud-sub">Tap to photograph or choose from camera roll</div>
+    </div>
+    <div style="height:14px;"></div>
+    <button class="btn-primary" id="btn-to-review" onclick="goToReview()" disabled>Review Scores →</button>
+    <div style="height:10px;"></div>
+    <button class="btn-secondary" onclick="go('scr-setup')">← Back</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     SCREEN · REVIEW
+════════════════════════════════ -->
+<div id="scr-review" class="screen">
+  <div class="app-header">
+    <div class="hdr-eyebrow">Step 2 of 3</div>
+    <h1 class="hdr-title">Review <em>Scores</em></h1>
+    <p class="hdr-sub">Tap any score to correct it · Names and HCs are editable</p>
+  </div>
+  <div class="scroll-body" id="review-body">
+    <!-- rendered dynamically -->
+    <button class="btn-primary" onclick="goToReconcile()" style="margin-top:8px;">Assign Teams →</button>
+    <div style="height:10px;"></div>
+    <button class="btn-secondary" onclick="go('scr-upload')">← Back</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     SCREEN · RECONCILE
+════════════════════════════════ -->
+<div id="scr-reconcile" class="screen">
+  <div class="app-header">
+    <div class="hdr-eyebrow">Step 3 of 3</div>
+    <h1 class="hdr-title">Build <em>Teams</em></h1>
+    <p class="hdr-sub">Assign each player to their Nassau team</p>
+  </div>
+  <div class="scroll-body" id="recon-body">
+    <!-- rendered dynamically -->
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     SCREEN · SCORING (manual)
+════════════════════════════════ -->
+<div id="scr-scoring" class="screen">
+  <div class="scoring-header">
+    <div class="hole-nav">
+      <button class="hole-nav-btn" id="nav-prev" onclick="prevHole()">‹</button>
+      <div class="hole-center">
+        <div class="hole-big" id="hole-big">Hole 1</div>
+        <div class="hole-meta" id="hole-meta">Par 4 · HCP 6</div>
+        <div class="hole-format" id="hole-fmt"></div>
+      </div>
+      <button class="hole-nav-btn" id="nav-next" onclick="nextOrDone()">›</button>
+    </div>
+    <div class="progress-track" id="prog-track"></div>
+  </div>
+  <div class="score-body" id="score-body"></div>
+  <div class="nassau-bar">
+    <div class="nb-eyebrow" id="nb-eyebrow">Live Nassau · Live Oak</div>
+    <div class="nb-matchups" id="nb-matchups"></div>
+    <button class="btn-primary" id="btn-next-hole" onclick="nextOrDone()" style="padding:13px;">Next Hole →</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     SCREEN · RESULTS
+════════════════════════════════ -->
+<div id="scr-results" class="screen">
+  <div class="app-header">
+    <div class="hdr-eyebrow" id="results-eyebrow">Round Complete</div>
+    <h1 class="hdr-title">Final <em>Results</em></h1>
+    <p class="hdr-sub" id="results-sub">Fair Oaks Ranch</p>
+  </div>
+  <div class="scroll-body" id="results-body"></div>
+</div>
+
+<!-- ADD PLAYER MODAL -->
+<div class="modal-bg hidden" id="add-modal">
+  <div class="modal-sheet">
+    <div class="modal-title">Add Player</div>
+    <div class="modal-2col">
+      <div><div class="field-label">Name</div><input type="text" id="modal-name" placeholder="Player name"></div>
+      <div><div class="field-label">HC</div><input type="number" id="modal-hcp" placeholder="0" min="0" max="36"></div>
+    </div>
+    <div class="field-label" style="margin-bottom:8px;">Assign to Team</div>
+    <div class="modal-team-opts" id="modal-team-opts"></div>
+    <button class="btn-primary" onclick="confirmAddPlayer()" style="margin-bottom:10px;">Add Player</button>
+    <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+// WORKER URL — paste yours here after setup
+// ═══════════════════════════════════════
+const WORKER_URL = 'REPLACE_WITH_YOUR_WORKER_URL';
+
+// ═══════════════════════════════════════
+// COURSE DATA
+// ═══════════════════════════════════════
+const COURSES = {
+  liveoak: {
+    id:'liveoak', name:'Live Oak',
+    holes:[
+      {h:1,par:4,hcp:6},{h:2,par:3,hcp:14},{h:3,par:4,hcp:8},{h:4,par:4,hcp:18},
+      {h:5,par:4,hcp:10},{h:6,par:5,hcp:2},{h:7,par:3,hcp:12},{h:8,par:4,hcp:4},
+      {h:9,par:5,hcp:16},{h:10,par:5,hcp:17},{h:11,par:4,hcp:3},{h:12,par:3,hcp:9},
+      {h:13,par:4,hcp:7},{h:14,par:4,hcp:11},{h:15,par:4,hcp:1},{h:16,par:3,hcp:15},
+      {h:17,par:5,hcp:13},{h:18,par:4,hcp:5}
+    ]
+  },
+  blackjack: {
+    id:'blackjack', name:'Blackjack',
+    holes:[
+      {h:1,par:5,hcp:15},{h:2,par:4,hcp:5},{h:3,par:3,hcp:13},{h:4,par:4,hcp:11},
+      {h:5,par:4,hcp:7},{h:6,par:5,hcp:1},{h:7,par:3,hcp:17},{h:8,par:4,hcp:9},
+      {h:9,par:4,hcp:3},{h:10,par:5,hcp:16},{h:11,par:4,hcp:8},{h:12,par:4,hcp:2},
+      {h:13,par:3,hcp:14},{h:14,par:4,hcp:6},{h:15,par:5,hcp:12},{h:16,par:4,hcp:10},
+      {h:17,par:3,hcp:18},{h:18,par:4,hcp:4}
+    ]
+  }
+};
+
+const TC = ['#68d391','#63b3ed','#f6ad55','#fc8181','#b794f4'];
+
+// ═══════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════
+let G = {
+  courseId:   'liveoak',
+  netCount:   1,
+  grossCount: 1,
+  skinsType:  'none',
+  mode:       'photo',
+  teams:      [],      // [{name,color,players:[{name,hcp,scores:[18]}]}]
+  cards:      [],      // uploaded scorecards [{id,dataUrl,status,foursome:[{name,hcp,scores}]}]
+  reconPool:  [],      // all players from all cards [{...player,teamIdx}]
+  scores:     [],      // [hi][ti][pi] — built for manual mode or from photos
+  hole:       0,
+  modalTeam:  null,
+};
+
+const course = () => COURSES[G.courseId];
+
+// ═══════════════════════════════════════
+// SETUP CONTROLS
+// ═══════════════════════════════════════
+function selectCourse(id) {
+  G.courseId = id;
+  document.querySelectorAll('.course-tile').forEach(t => t.classList.remove('selected'));
+  document.getElementById(`ctile-${id}`).classList.add('selected');
+}
+
+function selectMode(m) {
+  G.mode = m;
+  document.querySelectorAll('.mode-tile').forEach(t => t.classList.remove('selected'));
+  document.getElementById(`mtile-${m}`).classList.add('selected');
+  document.getElementById('manual-section').style.display = m === 'manual' ? 'block' : 'none';
+  document.getElementById('begin-btn').textContent = m === 'photo' ? 'Upload Scorecards →' : 'Start Round →';
+}
+
+function setSeg(type, btn) {
+  btn.closest('.seg-wrap').querySelectorAll('.seg-btn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  const v = btn.dataset.v;
+  if (type === 'net')   G.netCount   = parseInt(v);
+  if (type === 'gross') G.grossCount = parseInt(v);
+  if (type === 'skins') G.skinsType  = v;
+  updateFP();
+}
+
+function updateFP() {
+  const sk = G.skinsType === 'none' ? 'No skins' : `${cap(G.skinsType)} skins ($1/skin)`;
+  document.getElementById('fp-text').textContent = `${G.netCount} Net + ${G.grossCount} Gross per hole · ${sk}`;
+}
+
+function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+// ═══════════════════════════════════════
+// MANUAL TEAMS
+// ═══════════════════════════════════════
+function addManualTeam(defaults) {
+  const idx = G.teams.length;
+  if (idx >= 5) return;
+  const color = TC[idx];
+  G.teams.push({name:`Team ${idx+1}`, color, players:[]});
+  const wrap = document.getElementById('manual-teams');
+  const card = document.createElement('div');
+  card.className = 'team-card'; card.id = `mt-${idx}`;
+  card.innerHTML = `
+    <div class="team-card-header">
+      <div class="team-card-title">
+        <span class="team-chip" style="background:${color}"></span>
+        <input type="text" value="Team ${idx+1}"
+          style="background:transparent;border:none;outline:none;font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:700;color:var(--parch);width:130px;"
+          onchange="G.teams[${idx}].name=this.value">
+      </div>
+      ${idx>=2?`<button class="btn-icon-danger" onclick="removeManualTeam(${idx})">×</button>`:''}
+    </div>
+    <div id="mt-${idx}-players"></div>
+    <button class="btn-ghost" style="margin-top:4px;" onclick="addManualPlayer(${idx})">+ Add Player</button>
+  `;
+  wrap.appendChild(card);
+  (defaults||[{name:'',hcp:0},{name:'',hcp:0}]).forEach(p => addManualPlayer(idx, p.name, p.hcp));
+}
+
+function addManualPlayer(ti, name='', hcp='') {
+  const pi = G.teams[ti].players.length;
+  G.teams[ti].players.push({name:'', hcp:0, scores:Array(18).fill(null)});
+  const wrap = document.getElementById(`mt-${ti}-players`);
+  const row = document.createElement('div');
+  row.className = 'player-row';
+  row.innerHTML = `
+    <div><div class="field-label">Name</div>
+      <input type="text" placeholder="Name" value="${name}"
+        onchange="G.teams[${ti}].players[${pi}].name=this.value.trim()"></div>
+    <div><div class="field-label">HC</div>
+      <input type="number" placeholder="0" value="${hcp}" min="0" max="36"
+        onchange="G.teams[${ti}].players[${pi}].hcp=parseInt(this.value)||0"></div>
+    <button class="btn-icon-danger" onclick="this.closest('.player-row').remove();G.teams[${ti}].players.splice(${pi},1)">×</button>
+  `;
+  wrap.appendChild(row);
+}
+
+function removeManualTeam(idx) {
+  if (G.teams.length <= 2) return;
+  const tmp = G.teams.map(t=>({...t,players:[...t.players]}));
+  tmp.splice(idx,1); G.teams=[];
+  document.getElementById('manual-teams').innerHTML='';
+  tmp.forEach(t=>addManualTeam(t.players));
+}
+
+// ═══════════════════════════════════════
+// BEGIN ROUND
+// ═══════════════════════════════════════
+function begin() {
+  // read segs
+  G.netCount   = parseInt(document.querySelector('#seg-net .seg-btn.on').dataset.v);
+  G.grossCount = parseInt(document.querySelector('#seg-gross .seg-btn.on').dataset.v);
+  G.skinsType  = document.querySelector('#seg-skins .seg-btn.on').dataset.v;
+
+  if (G.mode === 'photo') {
+    G.cards = [];
+    document.getElementById('upload-list').innerHTML = '';
+    document.getElementById('btn-to-review').disabled = true;
+    document.getElementById('upload-badge').textContent = `${course().name} · Photo Upload`;
+    go('scr-upload');
+  } else {
+    // Read manual players from DOM
+    G.teams.forEach((t,ti) => {
+      const names = document.querySelectorAll(`#mt-${ti}-players input[type=text]`);
+      const hcps  = document.querySelectorAll(`#mt-${ti}-players input[type=number]`);
+      t.players = [];
+      names.forEach((el,i) => { if(el.value.trim()) t.players.push({name:el.value.trim(),hcp:parseInt(hcps[i]?.value)||0,scores:Array(18).fill(null)}); });
+    });
+    if (G.teams.length < 2) { alert('Add at least 2 teams.'); return; }
+    if (G.teams.some(t=>t.players.length<1)) { alert('Each team needs at least 1 player.'); return; }
+    initManualScoring();
+    go('scr-scoring');
+    renderHole();
+  }
+}
+
+// ═══════════════════════════════════════
+// PHOTO UPLOAD
+// ═══════════════════════════════════════
+function onFileSelected(input) {
+  if (!input.files[0]) return;
+  const file = input.files[0];
+  const id = Date.now();
+  const reader = new FileReader();
+  reader.onload = e => {
+    addCardUI(id, e.target.result, file.name);
+    readCardWithAI(id, e.target.result, file.type || 'image/jpeg');
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
+function addCardUI(id, dataUrl, filename) {
+  const idx = G.cards.length + 1;
+  G.cards.push({id, dataUrl, status:'reading', foursome:[]});
+  const div = document.createElement('div');
+  div.className = 'scorecard-card'; div.id = `card-${id}`;
+  div.innerHTML = `
+    <div class="sc-header">
+      <span class="sc-title">Foursome ${idx}</span>
+      <span class="sc-status reading" id="cstatus-${id}"><span class="spin"></span> Reading…</span>
+    </div>
+    <img src="${dataUrl}" class="sc-thumb" alt="Scorecard">
+    <div class="sc-players" id="cplayers-${id}"></div>
+  `;
+  document.getElementById('upload-list').appendChild(div);
+}
+
+async function readCardWithAI(cardId, dataUrl, mimeType) {
+  const base64 = dataUrl.split(',')[1];
+  const c = course();
+
+  const prompt = `You are reading a golf scorecard from ${c.name} at Fair Oaks Ranch, TX (Par ${c.holes.reduce((s,h)=>s+h.par,0)}).
+
+Extract every player on this scorecard. Return ONLY valid JSON, no other text, no markdown fences:
+{"players":[{"name":"Player Name","hcp":8,"scores":[4,3,5,4,4,5,3,4,5,5,4,3,4,4,4,3,5,4]}]}
+
+Rules:
+- scores is always an array of exactly 18 integers (holes 1-18 in order)
+- Use null for any illegible or missing score
+- hcp is their handicap index or course handicap number shown on the card
+- Include every player row you can find`;
+
+  try {
+    const res = await fetch(WORKER_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1200,
+        messages:[{
+          role:'user',
+          content:[
+            {type:'image',source:{type:'base64',media_type:mimeType,data:base64}},
+            {type:'text',text:prompt}
+          ]
+        }]
+      })
+    });
+
+    const data = await res.json();
+    const text = (data.content||[]).find(b=>b.type==='text')?.text||'';
+    const match = text.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error('No JSON in response');
+    const parsed = JSON.parse(match[0]);
+
+    const ci = G.cards.findIndex(c=>c.id===cardId);
+    G.cards[ci].foursome = parsed.players.map(p=>({
+      name: p.name||'Unknown',
+      hcp:  parseInt(p.hcp)||0,
+      scores: Array.isArray(p.scores) ? p.scores.slice(0,18).map(s=>s!=null?parseInt(s)||null:null) : Array(18).fill(null)
+    }));
+    G.cards[ci].status = 'done';
+
+    document.getElementById(`cstatus-${cardId}`).className = 'sc-status done';
+    document.getElementById(`cstatus-${cardId}`).textContent = `✓ ${parsed.players.length} players`;
+    document.getElementById(`cplayers-${cardId}`).innerHTML =
+      parsed.players.map(p=>`<div class="sc-player-line">${p.name} · HC ${p.hcp}</div>`).join('');
+
+  } catch(err) {
+    const ci = G.cards.findIndex(c=>c.id===cardId);
+    G.cards[ci].status = 'error';
+    document.getElementById(`cstatus-${cardId}`).className = 'sc-status error';
+    document.getElementById(`cstatus-${cardId}`).textContent = '⚠ Read error';
+    console.error(err);
+  }
+
+  checkUploadReady();
+}
+
+function checkUploadReady() {
+  const ready = G.cards.length > 0 && G.cards.every(c=>c.status!=='reading');
+  document.getElementById('btn-to-review').disabled = !ready;
+}
+
+// ═══════════════════════════════════════
+// REVIEW SCREEN
+// ═══════════════════════════════════════
+function goToReview() {
+  const body = document.getElementById('review-body');
+  // Clear and rebuild, keeping the action buttons at bottom
+  body.innerHTML = '';
+
+  G.cards.forEach((card, ci) => {
+    if (!card.foursome.length) return;
+    const grp = document.createElement('div');
+    grp.className = 'review-group';
+    grp.innerHTML = `<div class="review-group-label">Foursome ${ci+1}</div>`;
+
+    card.foursome.forEach((player, pi) => {
+      const pc = document.createElement('div');
+      pc.className = 'review-player-card';
+
+      const front = player.scores.slice(0,9);
+      const back  = player.scores.slice(9,18);
+
+      pc.innerHTML = `
+        <div class="rpc-header">
+          <div class="rpc-name" contenteditable="true"
+            onblur="G.cards[${ci}].foursome[${pi}].name=this.textContent.trim()">${player.name}</div>
+          <div class="rpc-hcp-wrap">
+            <span class="rpc-hcp-label">HC</span>
+            <input class="rpc-hcp-input" type="number" value="${player.hcp}" min="0" max="36"
+              onchange="G.cards[${ci}].foursome[${pi}].hcp=parseInt(this.value)||0">
+          </div>
+        </div>
+        <div class="scores-9">
+          ${front.map((s,hi)=>`
+            <div>
+              <div class="score-hole-label">${hi+1}</div>
+              <input class="score-hole-input" type="number" value="${s??''}" min="1" max="15" placeholder="—"
+                onchange="G.cards[${ci}].foursome[${pi}].scores[${hi}]=parseInt(this.value)||null">
+            </div>`).join('')}
+        </div>
+        <div class="scores-divider">· · · · · · · · ·</div>
+        <div class="scores-9">
+          ${back.map((s,hi)=>`
+            <div>
+              <div class="score-hole-label">${hi+10}</div>
+              <input class="score-hole-input" type="number" value="${s??''}" min="1" max="15" placeholder="—"
+                onchange="G.cards[${ci}].foursome[${pi}].scores[${hi+9}]=parseInt(this.value)||null">
+            </div>`).join('')}
+        </div>
+      `;
+      grp.appendChild(pc);
+    });
+
+    body.appendChild(grp);
+  });
+
+  const btnWrap = document.createElement('div');
+  btnWrap.innerHTML = `
+    <button class="btn-primary" onclick="goToReconcile()" style="margin-top:8px;">Assign Teams →</button>
+    <div style="height:10px;"></div>
+    <button class="btn-secondary" onclick="go('scr-upload')">← Back</button>
+  `;
+  body.appendChild(btnWrap);
+
+  go('scr-review');
+}
+
+// ═══════════════════════════════════════
+// RECONCILE / TEAM BUILDER
+// ═══════════════════════════════════════
+function goToReconcile() {
+  // Init teams if needed
+  if (G.teams.length === 0) {
+    G.teams = [
+      {name:'Team 1', color:TC[0], players:[]},
+      {name:'Team 2', color:TC[1], players:[]},
+    ];
+  }
+
+  // Build pool from all cards
+  G.reconPool = [];
+  G.cards.forEach((card,ci) => {
+    card.foursome.forEach((p,pi) => {
+      G.reconPool.push({...p, cardIdx:ci, playerIdx:pi, teamIdx:null});
+    });
+  });
+
+  renderRecon();
+  go('scr-reconcile');
+}
+
+function renderRecon() {
+  const body = document.getElementById('recon-body');
+  body.innerHTML = '';
+
+  // Teams display
+  const teamsDiv = document.createElement('div');
+  teamsDiv.innerHTML = '<div class="sec-label">Teams</div>';
+
+  G.teams.forEach((team,ti) => {
+    const assigned = G.reconPool.filter(p=>p.teamIdx===ti);
+    const card = document.createElement('div');
+    card.className = 'recon-team-card';
+    card.style.borderColor = team.color+'33';
+    card.innerHTML = `
+      <div class="rtc-header">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="team-chip" style="background:${team.color}"></span>
+          <input class="rtc-name-input" type="text" value="${team.name}"
+            onchange="G.teams[${ti}].name=this.value;renderRecon()">
+        </div>
+        <span class="rtc-count">${assigned.length} player${assigned.length!==1?'s':''}</span>
+      </div>
+      <div class="rtc-players">
+        ${assigned.length===0
+          ? '<span class="empty-team">No players assigned</span>'
+          : assigned.map(p=>`
+            <span class="player-chip" style="border-color:${team.color}33;">
+              <span class="team-chip" style="background:${team.color};width:6px;height:6px;"></span>
+              ${p.name}
+            </span>`).join('')}
+      </div>
+    `;
+    teamsDiv.appendChild(card);
+  });
+
+  body.appendChild(teamsDiv);
+
+  // Add team button
+  if (G.teams.length < 5) {
+    const addTeamBtn = document.createElement('button');
+    addTeamBtn.className = 'btn-ghost';
+    addTeamBtn.style.marginBottom = '18px';
+    addTeamBtn.textContent = '+ Add Team';
+    addTeamBtn.onclick = () => {
+      const idx = G.teams.length;
+      G.teams.push({name:`Team ${idx+1}`, color:TC[idx], players:[]});
+      renderRecon();
+    };
+    body.appendChild(addTeamBtn);
+  }
+
+  // Player pool
+  const poolDiv = document.createElement('div');
+  poolDiv.className = 'pool-section';
+  poolDiv.innerHTML = '<div class="sec-label">Players — Assign to Teams</div>';
+
+  G.reconPool.forEach((p,idx) => {
+    const row = document.createElement('div');
+    row.className = 'pool-player';
+    row.innerHTML = `
+      <div class="pp-info">
+        <div class="pp-name">${p.name}</div>
+        <div class="pp-sub">HC ${p.hcp} · Foursome ${p.cardIdx+1}</div>
+      </div>
+      <select class="team-mini-select" onchange="G.reconPool[${idx}].teamIdx=parseInt(this.value)<0?null:parseInt(this.value);renderReconTeamsOnly()">
+        <option value="-1">— Unassigned —</option>
+        ${G.teams.map((t,ti)=>`<option value="${ti}" ${p.teamIdx===ti?'selected':''}>${t.name}</option>`).join('')}
+      </select>
+    `;
+    poolDiv.appendChild(row);
+  });
+
+  body.appendChild(poolDiv);
+
+  // Add manual player button
+  const manBtn = document.createElement('button');
+  manBtn.className = 'btn-ghost';
+  manBtn.style.marginBottom = '14px';
+  manBtn.textContent = '+ Add Player Not on a Card';
+  manBtn.onclick = () => openModal();
+  body.appendChild(manBtn);
+
+  // Confirm button
+  const confirmBtn = document.createElement('button');
+  confirmBtn.className = 'btn-primary';
+  confirmBtn.textContent = 'Calculate Results →';
+  confirmBtn.onclick = confirmTeams;
+  body.appendChild(confirmBtn);
+
+  const backBtn = document.createElement('button');
+  backBtn.className = 'btn-secondary';
+  backBtn.style.marginTop = '10px';
+  backBtn.textContent = '← Back';
+  backBtn.onclick = () => go('scr-review');
+  body.appendChild(backBtn);
+}
+
+function renderReconTeamsOnly() {
+  // Lightweight update — just re-render the team assignment displays
+  G.teams.forEach((team,ti) => {
+    const assigned = G.reconPool.filter(p=>p.teamIdx===ti);
+    const playersEl = document.querySelectorAll('.recon-team-card')[ti]?.querySelector('.rtc-players');
+    const countEl   = document.querySelectorAll('.recon-team-card')[ti]?.querySelector('.rtc-count');
+    if (playersEl) {
+      playersEl.innerHTML = assigned.length===0
+        ? '<span class="empty-team">No players assigned</span>'
+        : assigned.map(p=>`<span class="player-chip" style="border-color:${team.color}33;"><span class="team-chip" style="background:${team.color};width:6px;height:6px;"></span>${p.name}</span>`).join('');
+    }
+    if (countEl) countEl.textContent = `${assigned.length} player${assigned.length!==1?'s':''}`;
+  });
+}
+
+function confirmTeams() {
+  // Build teams with players and scores
+  G.teams.forEach(t => t.players=[]);
+  G.reconPool.forEach(p => {
+    if (p.teamIdx===null||p.teamIdx<0||p.teamIdx>=G.teams.length) return;
+    G.teams[p.teamIdx].players.push({name:p.name, hcp:p.hcp, scores:p.scores||Array(18).fill(null)});
+  });
+
+  const empty = G.teams.filter(t=>t.players.length===0);
+  if (empty.length > 0) {
+    if (!confirm(`${empty.map(t=>t.name).join(', ')} have no players. Continue?`)) return;
+  }
+
+  // Build scores array
+  const c = course();
+  G.scores = c.holes.map((_,hi) =>
+    G.teams.map(t => t.players.map(p => p.scores[hi]??null))
+  );
+
+  showResults();
+}
+
+// ═══════════════════════════════════════
+// ADD PLAYER MODAL
+// ═══════════════════════════════════════
+function openModal() {
+  G.modalTeam = null;
+  document.getElementById('modal-name').value = '';
+  document.getElementById('modal-hcp').value = '';
+  const opts = document.getElementById('modal-team-opts');
+  opts.innerHTML = G.teams.map((t,i)=>`
+    <button class="modal-team-opt" onclick="G.modalTeam=${i};document.querySelectorAll('.modal-team-opt').forEach(b=>b.classList.remove('on'));this.classList.add('on')">
+      <span class="team-chip" style="background:${t.color}"></span>${t.name}
+    </button>`).join('');
+  document.getElementById('add-modal').classList.remove('hidden');
+}
+function closeModal() { document.getElementById('add-modal').classList.add('hidden'); }
+function confirmAddPlayer() {
+  const name = document.getElementById('modal-name').value.trim();
+  const hcp  = parseInt(document.getElementById('modal-hcp').value)||0;
+  if (!name) { alert('Please enter a name.'); return; }
+  G.reconPool.push({name, hcp, cardIdx:-1, playerIdx:-1, teamIdx:G.modalTeam, scores:Array(18).fill(null)});
+  closeModal();
+  renderRecon();
+}
+
+// ═══════════════════════════════════════
+// MANUAL SCORING ENGINE
+// ═══════════════════════════════════════
+function initManualScoring() {
+  const c = course();
+  G.scores = c.holes.map(()=>G.teams.map(t=>t.players.map(()=>null)));
+  G.hole = 0;
+  document.getElementById('nb-eyebrow').textContent = `Live Nassau · ${c.name}`;
+}
+
+function stroke(hcp, holeHcp) { return hcp >= holeHcp; }
+
+function sClass(score, par) {
+  if (!score&&score!==0) return '';
+  const d = score-par;
+  if (d<=-2) return 'eagle';
+  if (d===-1) return 'birdie';
+  if (d===0)  return 'par';
+  if (d===1)  return 'bogey';
+  if (d===2)  return 'double';
+  return 'worse';
+}
+
+function teamScore(ti, hi) {
+  const c = course();
+  const hole = c.holes[hi];
+  const players = G.teams[ti].players;
+  const raw = G.scores[hi][ti];
+  const needed = G.netCount + G.grossCount;
+  const tPar = hole.par * needed;
+
+  const cands = players.map((p,i)=>{
+    if (!raw[i]) return null;
+    const s = stroke(p.hcp, hole.hcp);
+    return {idx:i, gross:raw[i], net:s?raw[i]-1:raw[i]};
+  }).filter(Boolean);
+
+  if (!cands.length) return {total:null, par:tPar, contribs:[]};
+
+  function* combos(arr,k) {
+    if (k===0){yield[];return;}
+    for(let i=0;i<=arr.length-k;i++)
+      for(const r of combos(arr.slice(i+1),k-1)) yield[arr[i],...r];
+  }
+  function bestAssign(grp) {
+    let best=Infinity,bc=[];
+    const n=Math.min(G.netCount,grp.length);
+    for(const nps of combos(grp,n)){
+      const ns=new Set(nps.map(p=>p.idx));
+      const gps=grp.filter(p=>!ns.has(p.idx)).slice(0,G.grossCount);
+      const t=nps.reduce((s,p)=>s+p.net,0)+gps.reduce((s,p)=>s+p.gross,0);
+      if(t<best){best=t;bc=[...nps.map(p=>({...p,role:'net'})),...gps.map(p=>({...p,role:'gross'}))];}
+    }
+    return{total:best,contribs:bc};
+  }
+  if(cands.length<needed) return{...bestAssign(cands),par:tPar};
+  let best=Infinity,bc=[];
+  for(const grp of combos(cands,needed)){
+    const{total,contribs}=bestAssign(grp);
+    if(total<best){best=total;bc=contribs;}
+  }
+  return{total:best,par:tPar,contribs:bc};
+}
+
+function allHoles() {
+  const c = course();
+  return c.holes.map((_,hi)=>{
+    const trs=G.teams.map((_,ti)=>teamScore(ti,hi));
+    const vals=trs.map(r=>r.total).filter(v=>v!==null);
+    if(!vals.length) return{trs,winner:null,tie:false,min:null};
+    const min=Math.min(...vals);
+    const ws=trs.map((r,i)=>r.total===min?i:-1).filter(i=>i>=0);
+    return{trs,winner:ws.length===1?ws[0]:null,tie:ws.length>1,min};
+  });
+}
+
+function nassau() {
+  const holes=allHoles();
+  const mu=[];
+  for(let a=0;a<G.teams.length;a++)
+    for(let b=a+1;b<G.teams.length;b++){
+      let f=0,bk=0;
+      holes.forEach((h,hi)=>{
+        const ta=h.trs[a].total,tb=h.trs[b].total;
+        if(ta===null||tb===null) return;
+        const w=ta<tb?'a':ta>tb?'b':'t';
+        if(hi<9){if(w==='a')f++;else if(w==='b')f--;}
+        else    {if(w==='a')bk++;else if(w==='b')bk--;}
+      });
+      mu.push({a,b,front:f,back:bk,overall:f+bk});
+    }
+  return{holes,mu};
+}
+
+function skins(holes) {
+  let pot=0,sk=[];
+  holes.forEach((h,hi)=>{
+    pot++;
+    if(h.winner!==null&&!h.tie){sk.push({hole:hi+1,ti:h.winner,pot});pot=0;}
+  });
+  return sk;
+}
+
+// ═══════════════════════════════════════
+// RENDER HOLE (MANUAL)
+// ═══════════════════════════════════════
+function renderHole() {
+  const hi=G.hole;
+  const c=course();
+  const hole=c.holes[hi];
+  const total=G.netCount+G.grossCount;
+
+  document.getElementById('hole-big').textContent=`Hole ${hole.h}`;
+  document.getElementById('hole-meta').textContent=`Par ${hole.par} · HCP ${hole.hcp} · ${c.name}`;
+  document.getElementById('hole-fmt').textContent=`Team par ${hole.par*total} · ${G.netCount}N + ${G.grossCount}G`;
+  document.getElementById('prog-track').innerHTML=
+    c.holes.map((_,i)=>`<div class="prog-dot${i<hi?' done':i===hi?' now':''}"></div>`).join('');
+  document.getElementById('nav-prev').disabled=hi===0;
+  const last=hi===17;
+  const nb=document.getElementById('btn-next-hole');
+  nb.textContent=last?'Finish Round →':'Next Hole →';
+
+  const body=document.getElementById('score-body');
+  body.innerHTML='';
+
+  G.teams.forEach((team,ti)=>{
+    const res=teamScore(ti,hi);
+    const cm={};res.contribs.forEach(cc=>cm[cc.idx]=cc.role);
+    const pd=res.total!==null?res.total-res.par:null;
+    const ds=pd!==null?(pd===0?'E':pd>0?`+${pd}`:`${pd}`):'—';
+
+    const block=document.createElement('div');
+    block.className='team-block';
+    block.innerHTML=`
+      <div class="team-block-hdr">
+        <div class="tbh-name"><span class="team-chip" style="background:${team.color}"></span>${team.name}</div>
+        <div class="tbh-score" id="tsum-${ti}">Score: <b>${res.total??'—'}</b> <span style="font-size:8px;color:rgba(240,235,224,0.25);">/ ${res.par} (${ds})</span></div>
+      </div>
+    `;
+
+    team.players.forEach((p,pi)=>{
+      const s=stroke(p.hcp,hole.hcp);
+      const sc=G.scores[hi][ti][pi];
+      const net=sc!==null?(s?sc-1:sc):null;
+      const role=cm[pi];
+      const row=document.createElement('div');
+      row.className='player-score-row'+(s?' stroker':'');
+      row.innerHTML=`
+        <div class="psr-info">
+          <div class="psr-name">${p.name}${role?`<span class="contrib-tag ${role}">${role}</span>`:''}</div>
+          <div class="psr-hcp">HC ${p.hcp}</div>
+        </div>
+        <div class="stroke-pip">${s?'●':''}</div>
+        <div class="stepper">
+          <button class="step-btn" onclick="adj(${ti},${pi},-1,${hi})">−</button>
+          <div class="step-num ${sClass(sc,hole.par)}" id="sn-${ti}-${pi}">${sc??'—'}</div>
+          <button class="step-btn" onclick="adj(${ti},${pi},1,${hi})">+</button>
+        </div>
+        <div class="net-label" id="nl-${ti}-${pi}">${net??''}</div>
+      `;
+      block.appendChild(row);
+    });
+    body.appendChild(block);
+  });
+
+  updateNassauBar();
+}
+
+function adj(ti,pi,delta,hi) {
+  const hole=course().holes[hi];
+  let v=(G.scores[hi][ti][pi]??hole.par)+delta;
+  v=Math.max(1,Math.min(15,v));
+  G.scores[hi][ti][pi]=v;
+  const s=stroke(G.teams[ti].players[pi].hcp,hole.hcp);
+  const el=document.getElementById(`sn-${ti}-${pi}`);
+  el.textContent=v; el.className=`step-num ${sClass(v,hole.par)}`;
+  document.getElementById(`nl-${ti}-${pi}`).textContent=s?v-1:v;
+  refreshTsum(ti,hi);
+  updateNassauBar();
+}
+
+function refreshTsum(ti,hi) {
+  const res=teamScore(ti,hi);
+  const pd=res.total!==null?res.total-res.par:null;
+  const ds=pd!==null?(pd===0?'E':pd>0?`+${pd}`:`${pd}`):'—';
+  const el=document.getElementById(`tsum-${ti}`);
+  if(el) el.innerHTML=`Score: <b>${res.total??'—'}</b> <span style="font-size:8px;color:rgba(240,235,224,0.25);">/ ${res.par} (${ds})</span>`;
+}
+
+function updateNassauBar() {
+  const{mu}=nassau();
+  const cells=document.getElementById('nb-matchups');
+  cells.innerHTML='';
+  mu.forEach(m=>{
+    const tA=G.teams[m.a],tB=G.teams[m.b];
+    function ms(score){
+      if(score===0) return`<span class="nb-val tied">A/S</span>`;
+      const w=score>0?tA:tB;
+      return`<span class="nb-val" style="color:${w.color}">${w.name} +${Math.abs(score)}</span>`;
+    }
+    const cell=document.createElement('div');
+    cell.className='nb-cell';
+    cell.innerHTML=`
+      <div class="nb-label">${tA.name} v ${tB.name}</div>
+      <div class="nb-scores-row">F: ${ms(m.front)} · B: ${ms(m.back)}</div>
+    `;
+    cells.appendChild(cell);
+  });
+}
+
+function prevHole(){if(G.hole>0){G.hole--;renderHole();}}
+function nextOrDone(){
+  if(G.hole<17){G.hole++;renderHole();}
+  else showResults();
+}
+
+// ═══════════════════════════════════════
+// RESULTS
+// ═══════════════════════════════════════
+function showResults() {
+  const c=course();
+  const{holes,mu}=nassau();
+  const sk=G.skinsType!=='none'?skins(holes):[];
+
+  document.getElementById('results-eyebrow').textContent=`Round Complete · ${c.name}`;
+  document.getElementById('results-sub').textContent=`Fair Oaks Ranch · ${c.name}`;
+
+  // Payouts
+  const net=G.teams.map(()=>0);
+  mu.forEach(m=>{
+    [[m.front,1],[m.back,1],[m.overall,1]].forEach(([sc,amt])=>{
+      if(sc>0){net[m.a]+=amt;net[m.b]-=amt;}
+      else if(sc<0){net[m.b]+=amt;net[m.a]-=amt;}
+    });
+  });
+  sk.forEach(s=>{
+    net[s.ti]+=s.pot;
+    G.teams.forEach((_,i)=>{if(i!==s.ti)net[i]-=1;});
+  });
+
+  const maxNet=Math.max(...net);
+  const winIdx=net.indexOf(maxNet);
+
+  let activeTab='nassau';
+  function renderTab(tab) {
+    activeTab=tab;
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
+    const tc=document.getElementById('tab-content');
+
+    if(tab==='nassau'){
+      tc.innerHTML=mu.map(m=>{
+        const tA=G.teams[m.a],tB=G.teams[m.b];
+        function betRow(label,score){
+          const cls=score===0?'push':score>0?'win':'lose';
+          const txt=score===0?'Push':score>0?`${tA.name} wins $1`:`${tB.name} wins $1`;
+          return`<div class="pc-row"><span class="label">${label}</span><span class="val ${cls}">${txt}</span></div>`;
+        }
+        return`<div class="payout-card" style="margin-bottom:10px;">
+          <div class="pc-header"><span class="team-chip" style="background:${tA.color}"></span>${tA.name} vs <span class="team-chip" style="background:${tB.color}"></span>${tB.name}</div>
+          ${betRow('Front 9',m.front)}${betRow('Back 9',m.back)}${betRow('Overall',m.overall)}
+        </div>`;
+      }).join('');
+    }
+
+    if(tab==='skins'){
+      tc.innerHTML=`<div class="payout-card">
+        <div class="pc-header">Skins · ${cap(G.skinsType)} · $1 per skin</div>
+        ${sk.length===0
+          ?'<div class="pc-row"><span class="label">No skins won — all holes tied</span></div>'
+          :sk.map(s=>`<div class="pc-row">
+            <span class="label">Hole ${s.hole}${s.pot>1?` (${s.pot} carried)`:''}</span>
+            <span class="val win" style="color:${G.teams[s.ti].color}">${G.teams[s.ti].name} +$${s.pot}</span>
+          </div>`).join('')}
+      </div>`;
+    }
+
+    if(tab==='holes'){
+      const heads=G.teams.map(t=>`<th>${t.name.replace('Team ','T')}</th>`).join('');
+      const rows=holes.map((h,hi)=>{
+        const hole=c.holes[hi];
+        const tds=h.trs.map(r=>`<td class="${r.total===h.min&&!h.tie?'ht-win':''}">${r.total??'—'}</td>`).join('');
+        const wc=h.winner!==null
+          ?`<td class="ht-win" style="color:${G.teams[h.winner].color}">${G.teams[h.winner].name.replace('Team ','T')}</td>`
+          :`<td class="${h.tie?'ht-tie':''}">${h.tie?'TIE':'—'}</td>`;
+        return`<tr><td>${hole.h}</td><td>${hole.par}</td>${tds}${wc}</tr>`;
+      }).join('');
+      tc.innerHTML=`<div class="payout-card"><table class="holes-table">
+        <thead><tr><th>H</th><th>P</th>${heads}<th>WIN</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>`;
+    }
+  }
+  window.switchTab=(t)=>renderTab(t);
+
+  const body=document.getElementById('results-body');
+  body.innerHTML=`
+    <div class="results-hero">
+      <div class="rh-label">Overall Winner</div>
+      <div class="rh-winner" style="color:${G.teams[winIdx].color}">${G.teams[winIdx].name}</div>
+      <div class="rh-sub">${c.name} · ${G.netCount}N + ${G.grossCount}G format</div>
+    </div>
+    <div class="payout-card" style="margin-bottom:14px;">
+      <div class="pc-header">Final Payouts</div>
+      ${G.teams.map((t,i)=>`
+        <div class="pc-row">
+          <span class="label"><span class="team-chip" style="background:${t.color}"></span>${t.name}</span>
+          <span class="val ${net[i]>0?'win':net[i]<0?'lose':'push'}">${net[i]>=0?'+':''}$${net[i].toFixed(2)}</span>
+        </div>`).join('')}
+    </div>
+    <div class="tab-row">
+      <button class="tab-btn on" data-t="nassau" onclick="switchTab('nassau')">Nassau</button>
+      ${G.skinsType!=='none'?`<button class="tab-btn" data-t="skins" onclick="switchTab('skins')">Skins</button>`:''}
+      <button class="tab-btn" data-t="holes" onclick="switchTab('holes')">Holes</button>
+    </div>
+    <div id="tab-content"></div>
+    <div style="height:14px;"></div>
+    <button class="btn-secondary" onclick="newRound()">← New Round</button>
+  `;
+
+  renderTab('nassau');
+  go('scr-results');
+}
+
+function newRound() {
+  G.teams=[]; G.cards=[]; G.reconPool=[]; G.scores=[];
+  go('scr-setup');
+}
+
+// ═══════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════
+function go(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+updateFP();
+// Pre-populate 2 manual teams for convenience
+addManualTeam([{name:'Devin',hcp:8},{name:'Pat',hcp:2},{name:'Paul',hcp:8},{name:'Rob',hcp:8}]);
+addManualTeam([{name:'Craig',hcp:8},{name:'Greg',hcp:2},{name:'Steve',hcp:13},{name:'John',hcp:4}]);
+</script>
+</body>
+</html>
