@@ -412,6 +412,21 @@ input::placeholder { color: rgba(240,235,224,0.2); }
   outline: none; -webkit-appearance: none; cursor: pointer; min-width: 90px;
 }
 .team-mini-select:focus { border-color: var(--gold); }
+.wildcard-select {
+  background: rgba(200,168,75,0.08); border: 1px solid rgba(200,168,75,0.3);
+  border-radius: 8px; padding: 6px 10px; color: var(--gold-warm);
+  font-family: 'DM Mono', monospace; font-size: 11px;
+  outline: none; -webkit-appearance: none; cursor: pointer; min-width: 90px;
+}
+.wildcard-select:focus { border-color: var(--gold); }
+.wildcard-badge {
+  display: inline-block; font-family: 'DM Mono', monospace;
+  font-size: 7px; letter-spacing: 1px; text-transform: uppercase;
+  background: rgba(200,168,75,0.12); color: var(--gold);
+  border: 1px solid rgba(200,168,75,0.3); border-radius: 4px;
+  padding: 1px 5px; margin-left: 5px; vertical-align: middle;
+}
+.pool-player-assignments { display: flex; flex-direction: column; gap: 5px; align-items: flex-end; }
 
 /* ═══════════════════════════════════
    SCORING SCREEN
@@ -620,21 +635,21 @@ input::placeholder { color: rgba(240,235,224,0.2); }
         <div>
           <div class="field-label">Net Scores</div>
           <div class="seg-wrap" id="seg-net">
+            <button class="seg-btn" data-v="0" onclick="setSeg('net',this)">0</button>
             <button class="seg-btn on" data-v="1" onclick="setSeg('net',this)">1</button>
             <button class="seg-btn" data-v="2" onclick="setSeg('net',this)">2</button>
             <button class="seg-btn" data-v="3" onclick="setSeg('net',this)">3</button>
             <button class="seg-btn" data-v="4" onclick="setSeg('net',this)">4</button>
-            <button class="seg-btn" data-v="5" onclick="setSeg('net',this)">5</button>
           </div>
         </div>
         <div>
           <div class="field-label">Gross Scores</div>
           <div class="seg-wrap" id="seg-gross">
+            <button class="seg-btn" data-v="0" onclick="setSeg('gross',this)">0</button>
             <button class="seg-btn on" data-v="1" onclick="setSeg('gross',this)">1</button>
             <button class="seg-btn" data-v="2" onclick="setSeg('gross',this)">2</button>
             <button class="seg-btn" data-v="3" onclick="setSeg('gross',this)">3</button>
             <button class="seg-btn" data-v="4" onclick="setSeg('gross',this)">4</button>
-            <button class="seg-btn" data-v="5" onclick="setSeg('gross',this)">5</button>
           </div>
         </div>
       </div>
@@ -868,7 +883,10 @@ function setSeg(type, btn) {
 
 function updateFP() {
   const sk = G.skinsType === 'none' ? 'No skins' : `${cap(G.skinsType)} skins ($1/skin)`;
-  document.getElementById('fp-text').textContent = `${G.netCount} Net + ${G.grossCount} Gross per hole · ${sk}`;
+  const netPart   = G.netCount   > 0 ? `${G.netCount} Net`   : null;
+  const grossPart = G.grossCount > 0 ? `${G.grossCount} Gross` : null;
+  const scorePart = [netPart, grossPart].filter(Boolean).join(' + ') || 'Gross only (no scores selected)';
+  document.getElementById('fp-text').textContent = `${scorePart} per hole · ${sk}`;
 }
 
 function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
@@ -1139,7 +1157,7 @@ function goToReconcile() {
   G.reconPool = [];
   G.cards.forEach((card,ci) => {
     card.foursome.forEach((p,pi) => {
-      G.reconPool.push({...p, cardIdx:ci, playerIdx:pi, teamIdx:null});
+      G.reconPool.push({...p, cardIdx:ci, playerIdx:pi, teamIdx:null, wildcardTeamIdx:null});
     });
   });
 
@@ -1206,15 +1224,24 @@ function renderRecon() {
   G.reconPool.forEach((p,idx) => {
     const row = document.createElement('div');
     row.className = 'pool-player';
+    const wcOptions = G.teams.map((t,ti)=>
+      `<option value="${ti}" ${p.wildcardTeamIdx===ti?'selected':''}>${t.name}</option>`
+    ).join('');
     row.innerHTML = `
       <div class="pp-info">
-        <div class="pp-name">${p.name}</div>
+        <div class="pp-name">${p.name}${p.wildcardTeamIdx!==null?`<span class="wildcard-badge">wildcard</span>`:''}</div>
         <div class="pp-sub">HC ${p.hcp} · Foursome ${p.cardIdx+1}</div>
       </div>
-      <select class="team-mini-select" onchange="G.reconPool[${idx}].teamIdx=parseInt(this.value)<0?null:parseInt(this.value);renderReconTeamsOnly()">
-        <option value="-1">— Unassigned —</option>
-        ${G.teams.map((t,ti)=>`<option value="${ti}" ${p.teamIdx===ti?'selected':''}>${t.name}</option>`).join('')}
-      </select>
+      <div class="pool-player-assignments">
+        <select class="team-mini-select" onchange="G.reconPool[${idx}].teamIdx=parseInt(this.value)<0?null:parseInt(this.value);renderReconTeamsOnly()">
+          <option value="-1">— Unassigned —</option>
+          ${G.teams.map((t,ti)=>`<option value="${ti}" ${p.teamIdx===ti?'selected':''}>${t.name}</option>`).join('')}
+        </select>
+        <select class="wildcard-select" onchange="G.reconPool[${idx}].wildcardTeamIdx=parseInt(this.value)<0?null:parseInt(this.value);renderRecon()">
+          <option value="-1">+ Wildcard for…</option>
+          ${wcOptions}
+        </select>
+      </div>
     `;
     poolDiv.appendChild(row);
   });
@@ -1248,14 +1275,20 @@ function renderReconTeamsOnly() {
   // Lightweight update — just re-render the team assignment displays
   G.teams.forEach((team,ti) => {
     const assigned = G.reconPool.filter(p=>p.teamIdx===ti);
+    const wildcards = G.reconPool.filter(p=>p.wildcardTeamIdx===ti && p.teamIdx!==ti);
     const playersEl = document.querySelectorAll('.recon-team-card')[ti]?.querySelector('.rtc-players');
     const countEl   = document.querySelectorAll('.recon-team-card')[ti]?.querySelector('.rtc-count');
     if (playersEl) {
-      playersEl.innerHTML = assigned.length===0
+      const chips = assigned.map(p=>`<span class="player-chip" style="border-color:${team.color}33;"><span class="team-chip" style="background:${team.color};width:6px;height:6px;"></span>${p.name}</span>`);
+      const wcChips = wildcards.map(p=>`<span class="player-chip" style="border-color:rgba(200,168,75,0.4);"><span style="font-size:9px;">⭐</span>${p.name}<span class="wildcard-badge">wc</span></span>`);
+      playersEl.innerHTML = (chips.length===0 && wcChips.length===0)
         ? '<span class="empty-team">No players assigned</span>'
-        : assigned.map(p=>`<span class="player-chip" style="border-color:${team.color}33;"><span class="team-chip" style="background:${team.color};width:6px;height:6px;"></span>${p.name}</span>`).join('');
+        : [...chips, ...wcChips].join('');
     }
-    if (countEl) countEl.textContent = `${assigned.length} player${assigned.length!==1?'s':''}`;
+    if (countEl) {
+      const wcNote = wildcards.length ? ` + ${wildcards.length} wildcard${wildcards.length>1?'s':''}` : '';
+      countEl.textContent = `${assigned.length} player${assigned.length!==1?'s':''}${wcNote}`;
+    }
   });
 }
 
@@ -1264,7 +1297,10 @@ function confirmTeams() {
   G.teams.forEach(t => t.players=[]);
   G.reconPool.forEach(p => {
     if (p.teamIdx===null||p.teamIdx<0||p.teamIdx>=G.teams.length) return;
-    G.teams[p.teamIdx].players.push({name:p.name, hcp:p.hcp, scores:p.scores||Array(18).fill(null)});
+    G.teams[p.teamIdx].players.push({
+      name:p.name, hcp:p.hcp, scores:p.scores||Array(18).fill(null),
+      wildcardTeamIdx: (p.wildcardTeamIdx!==null && p.wildcardTeamIdx!==p.teamIdx) ? p.wildcardTeamIdx : null
+    });
   });
 
   const empty = G.teams.filter(t=>t.players.length===0);
@@ -1300,7 +1336,7 @@ function confirmAddPlayer() {
   const name = document.getElementById('modal-name').value.trim();
   const hcp  = parseInt(document.getElementById('modal-hcp').value)||0;
   if (!name) { alert('Please enter a name.'); return; }
-  G.reconPool.push({name, hcp, cardIdx:-1, playerIdx:-1, teamIdx:G.modalTeam, scores:Array(18).fill(null)});
+  G.reconPool.push({name, hcp, cardIdx:-1, playerIdx:-1, teamIdx:G.modalTeam, wildcardTeamIdx:null, scores:Array(18).fill(null)});
   closeModal();
   renderRecon();
 }
@@ -1336,13 +1372,30 @@ function teamScore(ti, hi) {
   const needed = G.netCount + G.grossCount;
   const tPar = hole.par * needed;
 
-  const cands = players.map((p,i)=>{
-    if (!raw[i]) return null;
+  // Build candidate list: primary players + wildcards assigned to this team
+  const cands = [];
+  players.forEach((p,i) => {
+    if (!raw[i]) return;
     const s = stroke(p.hcp, hole.hcp);
-    return {idx:i, gross:raw[i], net:s?raw[i]-1:raw[i]};
-  }).filter(Boolean);
+    cands.push({idx:`t${ti}p${i}`, gross:raw[i], net:s?raw[i]-1:raw[i]});
+  });
+
+  // Pull in wildcard players from other teams
+  G.teams.forEach((ot, oti) => {
+    if (oti === ti) return;
+    ot.players.forEach((p, pi) => {
+      if (p.wildcardTeamIdx !== ti) return;
+      const wcRaw = G.scores[hi][oti][pi];
+      if (!wcRaw) return;
+      const s = stroke(p.hcp, hole.hcp);
+      cands.push({idx:`wc${oti}p${pi}`, gross:wcRaw, net:s?wcRaw-1:wcRaw, isWildcard:true, wcName:p.name});
+    });
+  });
 
   if (!cands.length) return {total:null, par:tPar, contribs:[]};
+
+  // Edge case: needed=0 means both net and gross are 0 — no score contributes
+  if (needed === 0) return {total:0, par:0, contribs:[]};
 
   function* combos(arr,k) {
     if (k===0){yield[];return;}
