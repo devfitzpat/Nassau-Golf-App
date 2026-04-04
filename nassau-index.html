@@ -1594,8 +1594,8 @@ function showResults() {
     });
   });
   sk.forEach(s=>{
-    net[s.ti]+=s.pot;
-    G.teams.forEach((_,i)=>{if(i!==s.ti)net[i]-=1;});
+    net[s.ti]+=s.pot*(G.teams.length-1);
+    G.teams.forEach((_,i)=>{if(i!==s.ti)net[i]-=s.pot;});
   });
 
   const maxNet=Math.max(...net);
