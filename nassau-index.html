@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Nassau">
-<meta name="theme-color" content="#142914">
+<meta name="theme-color" content="#1b2b46">
 <title>Nassau</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -16,17 +16,17 @@
    DESIGN TOKENS
 ═══════════════════════════════════ */
 :root {
-  --ink:       #142914;
-  --ink-mid:   #1e361e;
-  --ink-light: #2c452c;
+  --ink:       #1b2b46;
+  --ink-mid:   #24375a;
+  --ink-light: #2f4670;
   --moss:      #3d6b3d;
   --sage:      #6b9e6b;
   --gold:      #c8a84b;
   --gold-warm: #e2c97e;
   --gold-pale: #f5e9c8;
-  --parch:     #f0ebe0;
-  --parch-mid: #d9d0bc;
-  --parch-dim: #cbc3ae;
+  --parch:     #f4f7fb;
+  --parch-mid: #d3dcea;
+  --parch-dim: #aebbd0;
   --white:     #ffffff;
   --red:       #b84040;
   --red-soft:  #d97373;
@@ -114,7 +114,7 @@ body {
 .field-label {
   font-family: 'DM Mono', monospace;
   font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
-  color: rgba(240,235,224,0.4); margin-bottom: 5px;
+  color: rgba(242,246,252,0.4); margin-bottom: 5px;
 }
 
 /* ═══════════════════════════════════
@@ -157,11 +157,11 @@ body {
 .ct-sub {
   font-family: 'DM Mono', monospace;
   font-size: 8px; letter-spacing: 1px;
-  color: rgba(240,235,224,0.35); position: relative; z-index: 1;
+  color: rgba(242,246,252,0.35); position: relative; z-index: 1;
 }
 .ct-par {
   font-family: 'DM Mono', monospace;
-  font-size: 10px; color: rgba(240,235,224,0.45);
+  font-size: 10px; color: rgba(242,246,252,0.45);
   margin-top: 6px; position: relative; z-index: 1;
 }
 
@@ -177,7 +177,7 @@ body {
 .seg-btn {
   flex: 1; padding: 9px 4px;
   background: transparent; border: none;
-  color: rgba(240,235,224,0.4);
+  color: rgba(242,246,252,0.4);
   font-family: 'DM Mono', monospace; font-size: 13px;
   border-radius: 8px; cursor: pointer; transition: all 0.15s;
 }
@@ -220,7 +220,7 @@ body {
   font-size: 17px; font-weight: 700; color: var(--parch); margin-bottom: 3px;
 }
 .mode-tile.selected .mode-name { color: var(--gold); }
-.mode-sub { font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: 1px; color: rgba(240,235,224,0.35); }
+.mode-sub { font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: 1px; color: rgba(242,246,252,0.35); }
 
 /* ═══════════════════════════════════
    INPUTS
@@ -238,7 +238,7 @@ body {
   transition: border-color 0.15s;
 }
 input:focus { border-color: var(--gold); background: rgba(200,168,75,0.05); }
-input::placeholder { color: rgba(240,235,224,0.2); }
+input::placeholder { color: rgba(242,246,252,0.2); }
 
 /* ═══════════════════════════════════
    TEAM CARDS
@@ -293,7 +293,7 @@ input::placeholder { color: rgba(240,235,224,0.2); }
   width: 100%; padding: 11px;
   background: transparent;
   border: 1px dashed rgba(255,255,255,0.22);
-  color: rgba(240,235,224,0.45);
+  color: rgba(242,246,252,0.45);
   font-family: 'DM Mono', monospace; font-size: 11px;
   border-radius: 10px; cursor: pointer; margin-top: 6px;
 }
@@ -362,8 +362,8 @@ input::placeholder { color: rgba(240,235,224,0.2); }
 .rpc-hcp-label { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--parch-dim); }
 .rpc-hcp-input { width: 56px; padding: 4px 6px; font-size: 13px; text-align: center; border-radius: 6px; }
 .scores-9 { display: grid; grid-template-columns: repeat(9, 1fr); gap: 3px; padding: 10px 10px 4px; }
-.scores-divider { text-align: center; font-family: 'DM Mono', monospace; font-size: 8px; color: rgba(240,235,224,0.5); padding: 2px 0; letter-spacing: 2px; }
-.score-hole-label { font-family: 'DM Mono', monospace; font-size: 7px; color: rgba(240,235,224,0.3); text-align: center; margin-bottom: 2px; }
+.scores-divider { text-align: center; font-family: 'DM Mono', monospace; font-size: 8px; color: rgba(242,246,252,0.5); padding: 2px 0; letter-spacing: 2px; }
+.score-hole-label { font-family: 'DM Mono', monospace; font-size: 7px; color: rgba(242,246,252,0.3); text-align: center; margin-bottom: 2px; }
 .score-hole-input {
   width: 100%; padding: 5px 2px; text-align: center;
   font-family: 'Cormorant Garamond', serif; font-size: 16px; font-weight: 700;
@@ -396,8 +396,8 @@ input::placeholder { color: rgba(240,235,224,0.2); }
   border: 1px solid rgba(255,255,255,0.16);
   border-radius: 20px; padding: 4px 10px; font-size: 12px;
 }
-.player-chip .chip-remove { background: none; border: none; color: rgba(240,235,224,0.35); cursor: pointer; font-size: 15px; padding: 0; line-height: 1; margin-left: 2px; }
-.empty-team { font-family: 'DM Mono', monospace; font-size: 9px; color: rgba(240,235,224,0.2); padding: 4px 0; }
+.player-chip .chip-remove { background: none; border: none; color: rgba(242,246,252,0.35); cursor: pointer; font-size: 15px; padding: 0; line-height: 1; margin-left: 2px; }
+.empty-team { font-family: 'DM Mono', monospace; font-size: 9px; color: rgba(242,246,252,0.2); padding: 4px 0; }
 
 .pool-section { margin-bottom: 18px; }
 .pool-player {
@@ -481,7 +481,7 @@ input::placeholder { color: rgba(240,235,224,0.2); }
 }
 .player-score-row.stroker { background: rgba(200,168,75,0.03); }
 .psr-info .psr-name { font-size: 13px; font-weight: 500; }
-.psr-info .psr-hcp { font-family: 'DM Mono', monospace; font-size: 8px; color: rgba(240,235,224,0.3); }
+.psr-info .psr-hcp { font-family: 'DM Mono', monospace; font-size: 8px; color: rgba(242,246,252,0.3); }
 .stroke-pip { color: var(--gold); font-size: 9px; text-align: center; }
 .stepper { display: flex; align-items: center; }
 .step-btn {
@@ -518,7 +518,7 @@ input::placeholder { color: rgba(240,235,224,0.2); }
 ═══════════════════════════════════ */
 .nassau-bar {
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
-  background: linear-gradient(180deg, rgba(20,41,20,0.96) 0%, var(--ink) 100%);
+  background: linear-gradient(180deg, rgba(27,43,70,0.96) 0%, var(--ink) 100%);
   border-top: 1px solid rgba(200,168,75,0.35);
   padding: 10px 16px calc(12px + var(--safe-bot));
   backdrop-filter: blur(16px);
@@ -535,10 +535,10 @@ input::placeholder { color: rgba(240,235,224,0.2); }
   background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
   border-radius: 8px; padding: 6px 6px; text-align: center;
 }
-.nb-label { font-family: 'DM Mono', monospace; font-size: 7px; color: rgba(240,235,224,0.3); margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nb-label { font-family: 'DM Mono', monospace; font-size: 7px; color: rgba(242,246,252,0.3); margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .nb-val { font-family: 'Cormorant Garamond', serif; font-size: 13px; font-weight: 700; }
 .nb-val.tied { color: var(--gold); }
-.nb-scores-row { font-family: 'DM Mono', monospace; font-size: 8px; color: rgba(240,235,224,0.4); margin-top: 1px; }
+.nb-scores-row { font-family: 'DM Mono', monospace; font-size: 8px; color: rgba(242,246,252,0.4); margin-top: 1px; }
 
 /* ═══════════════════════════════════
    RESULTS SCREEN
@@ -551,7 +551,7 @@ input::placeholder { color: rgba(240,235,224,0.2); }
 .payout-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(200,168,75,0.18); border-radius: var(--r); overflow: hidden; margin-bottom: 12px; }
 .pc-header { background: rgba(200,168,75,0.07); padding: 8px 14px; font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .pc-row { display: flex; justify-content: space-between; align-items: center; padding: 11px 14px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 14px; }
-.pc-row .label { color: rgba(240,235,224,0.6); display: flex; align-items: center; gap: 5px; }
+.pc-row .label { color: rgba(242,246,252,0.6); display: flex; align-items: center; gap: 5px; }
 .pc-row .val { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 700; }
 .val.win { color: #68d391; }
 .val.lose { color: #fc8181; }
@@ -564,7 +564,7 @@ input::placeholder { color: rgba(240,235,224,0.2); }
 }
 .tab-btn {
   flex: 1; padding: 9px 4px; background: transparent; border: none;
-  color: rgba(240,235,224,0.4); font-family: 'DM Mono', monospace;
+  color: rgba(242,246,252,0.4); font-family: 'DM Mono', monospace;
   font-size: 9px; letter-spacing: 0.5px; text-transform: uppercase;
   border-radius: 8px; cursor: pointer; transition: all 0.15s;
 }
@@ -603,11 +603,11 @@ input::placeholder { color: rgba(240,235,224,0.2); }
 /* ═══ TEE SELECTION ═══ */
 .tee-seg { display: inline-flex; border: 1px solid rgba(200,168,75,0.25); border-radius: 6px; overflow: hidden; }
 .tee-btn { padding: 5px 9px; font-family: 'DM Mono', monospace; font-size: 9px; background: transparent; border: none; color: var(--parch-dim); cursor: pointer; }
-.tee-btn.on-blue { background: #2b6cb0; color: #fff; }
+.tee-btn.on-blue { background: #3d7fd6; color: #fff; }
 .tee-btn.on-oaks { background: #6b9e6b; color: #0e1c0e; }
 .tee-btn.on-white { background: #e2e8f0; color: #1a202c; }
 .tee-chip { font-family: 'DM Mono', monospace; font-size: 9px; padding: 1px 7px; border-radius: 5px; border: 1px solid rgba(200,168,75,0.3); background: transparent; color: var(--parch-dim); cursor: pointer; }
-.tee-chip.blue { background: #2b6cb0; color: #fff; border-color: #2b6cb0; }
+.tee-chip.blue { background: #3d7fd6; color: #fff; border-color: #3d7fd6; }
 .tee-chip.oaks { background: #6b9e6b; color: #0e1c0e; border-color: #6b9e6b; }
 .tee-chip.white { background: #e2e8f0; color: #1a202c; border-color: #e2e8f0; }
 
@@ -632,25 +632,25 @@ input::placeholder { color: rgba(240,235,224,0.2); }
 
 /* — outdoor contrast — */
 .sec-label { font-size: 9px; color: var(--gold-warm); }
-.field-label { font-size: 10px; color: rgba(240,235,224,0.6); }
-.ct-sub { font-size: 9px; color: rgba(240,235,224,0.55); }
-.ct-par { color: rgba(240,235,224,0.65); }
-.mode-sub { font-size: 9px; color: rgba(240,235,224,0.55); }
+.field-label { font-size: 10px; color: rgba(242,246,252,0.6); }
+.ct-sub { font-size: 9px; color: rgba(242,246,252,0.55); }
+.ct-par { color: rgba(242,246,252,0.65); }
+.mode-sub { font-size: 9px; color: rgba(242,246,252,0.55); }
 .hdr-sub { color: var(--parch-mid); }
-.score-hole-label { font-size: 9px; color: rgba(240,235,224,0.55); }
-.psr-info .psr-hcp { font-size: 10px; color: rgba(240,235,224,0.55); }
+.score-hole-label { font-size: 9px; color: rgba(242,246,252,0.55); }
+.psr-info .psr-hcp { font-size: 10px; color: rgba(242,246,252,0.55); }
 .tbh-score { font-size: 10px; color: var(--parch-mid); }
 .hole-meta { font-size: 10px; color: var(--parch-mid); }
 .hole-format { font-size: 9px; color: rgba(200,168,75,0.85); }
 .nb-eyebrow { font-size: 8px; }
-.nb-label { font-size: 8px; color: rgba(240,235,224,0.55); }
-.nb-scores-row { font-size: 9px; color: rgba(240,235,224,0.65); }
+.nb-label { font-size: 8px; color: rgba(242,246,252,0.55); }
+.nb-scores-row { font-size: 9px; color: rgba(242,246,252,0.65); }
 .review-group-label { font-size: 9px; }
 .rpc-hcp-label { font-size: 10px; }
 .rtc-count { font-size: 10px; }
 .pp-info .pp-sub { font-size: 10px; }
 .sc-player-line { font-size: 11px; }
-.empty-team { color: rgba(240,235,224,0.4); }
+.empty-team { color: rgba(242,246,252,0.4); }
 .fp-label { font-size: 9px; }
 .rh-label { font-size: 9px; }
 .pc-header { font-size: 9px; }
@@ -658,7 +658,7 @@ input::placeholder { color: rgba(240,235,224,0.2); }
 .holes-table { font-size: 11px; }
 .contrib-tag { font-size: 8px; }
 .wildcard-badge { font-size: 8px; }
-input::placeholder { color: rgba(240,235,224,0.35); }
+input::placeholder { color: rgba(242,246,252,0.35); }
 .card, .team-card, .team-block, .review-player-card, .pool-player, .recon-team-card { border-color: rgba(255,255,255,0.14); }
 .step-btn, .score-hole-input { border-color: rgba(255,255,255,0.25); }
 
@@ -704,8 +704,50 @@ input::placeholder { color: rgba(240,235,224,0.35); }
 .wildcard-badge { font-size: 9px; }
 .review-group-label { font-size: 10px; }
 .empty-team { font-size: 10px; }
-.btn-ghost { font-size: 12px; color: rgba(240,235,224,0.6); }
+.btn-ghost { font-size: 12px; color: rgba(242,246,252,0.6); }
 .ud-sub { font-size: 13px; }
+
+/* — readability pass 3 (2026-08-22): navy/white theme, type up again — */
+.psr-info .psr-name { font-size: 17px; }
+.psr-info .psr-hcp { font-size: 12px; }
+.step-num { font-size: 28px; }
+.net-label { font-size: 13px; }
+.field-label { font-size: 12px; }
+.sec-label { font-size: 11px; }
+.tbh-name { font-size: 13px; }
+.tbh-score { font-size: 12px; }
+.tbh-score b { font-size: 15px; }
+.hole-meta { font-size: 12px; }
+.hole-format { font-size: 11px; }
+.nb-eyebrow { font-size: 9px; }
+.nb-label { font-size: 10px; }
+.nb-val { font-size: 17px; }
+.nb-scores-row { font-size: 11px; }
+.pp-info .pp-name { font-size: 16px; }
+.pp-info .pp-sub { font-size: 12px; }
+.rpc-name { font-size: 17px; }
+.rpc-hcp-label { font-size: 12px; }
+.score-hole-input { font-size: 20px; }
+.score-hole-label { font-size: 11px; }
+.seg-btn { font-size: 15px; }
+.fp-value { font-size: 15px; }
+.hdr-sub { font-size: 13px; }
+.team-mini-select, .wildcard-select { font-size: 13px; }
+.sc-player-line { font-size: 13px; }
+.ud-sub { font-size: 14px; }
+.pc-row { font-size: 16px; }
+.holes-table { font-size: 13px; }
+.tee-btn { font-size: 12px; }
+.tee-chip { font-size: 12px; }
+.mode-sub { font-size: 11px; }
+.ct-par { font-size: 12px; }
+.ct-sub { font-size: 10px; }
+.btn-secondary { font-size: 13px; }
+.btn-ghost { font-size: 13px; }
+.rtc-count { font-size: 12px; }
+.review-group-label { font-size: 11px; }
+.empty-team { font-size: 11px; }
+.rh-sub { font-size: 11px; }
 </style>
 </head>
 <body>
@@ -980,7 +1022,7 @@ const course = () => COURSES[G.courseId];
 // (localStorage quota); extracted scores are kept.
 // ═══════════════════════════════════════
 const SAVE_KEY = 'nassau-round-v1';
-const CARD_PLACEHOLDER = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='110'><rect width='400' height='110' fill='%23243824'/><text x='200' y='60' font-family='monospace' font-size='12' fill='%23b8af9a' text-anchor='middle'>photo not kept - scores restored</text></svg>";
+const CARD_PLACEHOLDER = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='110'><rect width='400' height='110' fill='%2324375a'/><text x='200' y='60' font-family='monospace' font-size='12' fill='%23aebbd0' text-anchor='middle'>photo not kept - scores restored</text></svg>";
 
 function saveState() {
   try {
@@ -1132,7 +1174,14 @@ function begin() {
     });
     if (G.teams.length < 2) { alert('Add at least 2 teams.'); return; }
     if (G.teams.some(t=>t.players.length<1)) { alert('Each team needs at least 1 player.'); return; }
-    initManualScoring();
+    if (anyScoresEntered(G.scores)) {
+      // Coming back mid-round (e.g. switched course) — keep what's entered
+      reshapeScores();
+      G.hole = Math.min(Math.max(G.hole||0, 0), 17);
+      document.getElementById('nb-eyebrow').textContent = `Live Nassau · ${course().name}`;
+    } else {
+      initManualScoring();
+    }
     go('scr-scoring');
     renderHole();
   }
@@ -1553,6 +1602,18 @@ function initManualScoring() {
   document.getElementById('nb-eyebrow').textContent = `Live Nassau · ${c.name}`;
 }
 
+// Refit the existing scores array to the current team/player shape,
+// keeping every value that still has a slot. Used when re-entering
+// scoring after backing out to setup (e.g. wrong course selected).
+function reshapeScores() {
+  const old = G.scores;
+  G.scores = course().holes.map((_,hi)=>G.teams.map((t,ti)=>t.players.map((p,pi)=>old?.[hi]?.[ti]?.[pi] ?? null)));
+}
+
+function anyScoresEntered(scores) {
+  return Array.isArray(scores) && scores.some(h=>Array.isArray(h)&&h.some(t=>t.some(v=>v!=null)));
+}
+
 // ═══════════════════════════════════════
 // HANDICAP ENGINE (WHS)
 // p.hcp = GHIN handicap index; p.tee = 'blue' | 'white'
@@ -1720,7 +1781,7 @@ function renderHole() {
     block.innerHTML=`
       <div class="team-block-hdr">
         <div class="tbh-name"><span class="team-chip" style="background:${team.color}"></span>${team.name}</div>
-        <div class="tbh-score" id="tsum-${ti}">Score: <b>${res.total??'—'}</b> <span style="font-size:8px;color:rgba(240,235,224,0.5);">/ ${res.par} (${ds})</span></div>
+        <div class="tbh-score" id="tsum-${ti}">Score: <b>${res.total??'—'}</b> <span style="font-size:8px;color:rgba(242,246,252,0.5);">/ ${res.par} (${ds})</span></div>
       </div>
     `;
 
@@ -1735,7 +1796,7 @@ function renderHole() {
       row.innerHTML=`
         <div class="psr-info">
           <div class="psr-name">${p.name}${role?`<span class="contrib-tag ${role}">${role}</span>`:''}</div>
-          <div class="psr-hcp">IDX ${p.hcp} · ${teeLabel(p)} · CH ${ch}</div>
+          <div class="psr-hcp">IDX ${p.hcp} · ${teeLabel(p)[0]} · CH ${ch}</div>
         </div>
         <div class="stroke-pip">${st>0?'●'.repeat(st):st<0?'+':''}</div>
         <div class="stepper">
@@ -1749,6 +1810,13 @@ function renderHole() {
     });
     body.appendChild(block);
   });
+
+  const exitBtn=document.createElement('button');
+  exitBtn.className='btn-secondary';
+  exitBtn.style.marginTop='6px';
+  exitBtn.textContent='← Course & Setup — scores kept';
+  exitBtn.onclick=()=>go('scr-setup');
+  body.appendChild(exitBtn);
 
   updateNassauBar();
   saveState();
@@ -1773,7 +1841,7 @@ function refreshTsum(ti,hi) {
   const pd=res.total!==null?res.total-res.par:null;
   const ds=pd!==null?(pd===0?'E':pd>0?`+${pd}`:`${pd}`):'—';
   const el=document.getElementById(`tsum-${ti}`);
-  if(el) el.innerHTML=`Score: <b>${res.total??'—'}</b> <span style="font-size:8px;color:rgba(240,235,224,0.5);">/ ${res.par} (${ds})</span>`;
+  if(el) el.innerHTML=`Score: <b>${res.total??'—'}</b> <span style="font-size:8px;color:rgba(242,246,252,0.5);">/ ${res.par} (${ds})</span>`;
 }
 
 function updateNassauBar() {
@@ -1946,12 +2014,23 @@ document.addEventListener('change', () => saveState());
   try { saved = JSON.parse(localStorage.getItem(SAVE_KEY)); } catch(e) { return; }
   if (!saved || !saved.G) return;
   const RESUMABLE = ['scr-scoring','scr-review','scr-reconcile','scr-results'];
-  if (!RESUMABLE.includes(saved.phase)) return;
+  const midSetup = !RESUMABLE.includes(saved.phase) && anyScoresEntered(saved.G.scores);
+  if (!RESUMABLE.includes(saved.phase) && !midSetup) return;
   if (Date.now() - saved.t > 18*3600*1000) { clearSavedRound(); return; }
   if (!confirm('Resume the round in progress?')) { clearSavedRound(); return; }
   Object.assign(G, saved.G);
   G.cards.forEach(c => { if (!c.dataUrl) c.dataUrl = CARD_PLACEHOLDER; });
-  if (saved.phase === 'scr-scoring') {
+  if (midSetup) {
+    // Backed out to setup mid-round; rebuild the roster UI with the saved players
+    selectCourse(G.courseId);
+    selectMode(G.mode || 'manual');
+    if (G.mode === 'manual') {
+      const tms = G.teams.map(t => ({...t}));
+      G.teams = [];
+      document.getElementById('manual-teams').innerHTML = '';
+      tms.forEach(t => addManualTeam(t.players));
+    }
+  } else if (saved.phase === 'scr-scoring') {
     document.getElementById('nb-eyebrow').textContent = `Live Nassau · ${course().name}`;
     go('scr-scoring');
     renderHole();
