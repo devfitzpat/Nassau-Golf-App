@@ -254,7 +254,7 @@ input::placeholder { color: rgba(240,235,224,0.2); }
   font-size: 18px; font-weight: 700;
   display: flex; align-items: center; gap: 8px;
 }
-.player-row { display: grid; grid-template-columns: 1fr 58px 32px; gap: 7px; align-items: flex-end; margin-bottom: 8px; }
+.player-row { display: grid; grid-template-columns: 1fr 58px 62px 32px; gap: 7px; align-items: flex-end; margin-bottom: 8px; }
 
 /* ═══════════════════════════════════
    BUTTONS
@@ -598,6 +598,14 @@ input::placeholder { color: rgba(240,235,224,0.2); }
 }
 .modal-team-opt.on { border-color: var(--gold); background: rgba(200,168,75,0.08); color: var(--gold); }
 
+/* ═══ TEE SELECTION ═══ */
+.tee-seg { display: inline-flex; border: 1px solid rgba(200,168,75,0.25); border-radius: 6px; overflow: hidden; }
+.tee-btn { padding: 5px 9px; font-family: 'DM Mono', monospace; font-size: 9px; background: transparent; border: none; color: var(--parch-dim); cursor: pointer; }
+.tee-btn.on-blue { background: #2b6cb0; color: #fff; }
+.tee-btn.on-white { background: #e2e8f0; color: #1a202c; }
+.tee-chip { font-family: 'DM Mono', monospace; font-size: 9px; padding: 1px 7px; border-radius: 5px; border: 1px solid rgba(200,168,75,0.3); background: transparent; color: var(--parch-dim); cursor: pointer; }
+.tee-chip.blue { background: #2b6cb0; color: #fff; border-color: #2b6cb0; }
+.tee-chip.white { background: #e2e8f0; color: #1a202c; border-color: #e2e8f0; }
 </style>
 </head>
 <body>
@@ -620,11 +628,13 @@ input::placeholder { color: rgba(240,235,224,0.2); }
         <div class="ct-name">Live Oak</div>
         <div class="ct-sub">GARY PLAYER · 1978</div>
         <div class="ct-par">Par 72</div>
+        <div class="ct-sub">B 71.4/128 · W 69.5/115</div>
       </div>
       <div class="course-tile" id="ctile-blackjack" onclick="selectCourse('blackjack')">
         <div class="ct-name">Blackjack</div>
         <div class="ct-sub">PLAYER · GRIFFITH</div>
         <div class="ct-par">Par 72</div>
+        <div class="ct-sub">B 71.7/128 · W 69.0/123</div>
       </div>
     </div>
 
@@ -792,7 +802,12 @@ input::placeholder { color: rgba(240,235,224,0.2); }
     <div class="modal-title">Add Player</div>
     <div class="modal-2col">
       <div><div class="field-label">Name</div><input type="text" id="modal-name" placeholder="Player name"></div>
-      <div><div class="field-label">HC</div><input type="number" id="modal-hcp" placeholder="0" min="0" max="36"></div>
+      <div><div class="field-label">GHIN</div><input type="number" id="modal-hcp" placeholder="0" min="0" max="54" step="0.1"></div>
+    </div>
+    <div class="field-label" style="margin-bottom:6px;">Tee</div>
+    <div class="tee-seg" id="modal-tee" style="margin-bottom:12px;">
+      <button class="tee-btn" data-tee="blue" onclick="setModalTee(this)">Blue</button>
+      <button class="tee-btn on-white" data-tee="white" onclick="setModalTee(this)">White</button>
     </div>
     <div class="field-label" style="margin-bottom:8px;">Assign to Team</div>
     <div class="modal-team-opts" id="modal-team-opts"></div>
@@ -812,7 +827,9 @@ const WORKER_URL = 'https://nassau-proxy.devin-p-fitzpatrick.workers.dev';
 // ═══════════════════════════════════════
 const COURSES = {
   liveoak: {
-    id:'liveoak', name:'Live Oak',
+    id:'liveoak', name:'Live Oak', par:72,
+    // Men's ratings, USGA course database (verified 2026-08-21)
+    tees:{ blue:{name:'Blue', rating:71.4, slope:128}, white:{name:'White', rating:69.5, slope:115} },
     holes:[
       {h:1,par:4,hcp:6},{h:2,par:3,hcp:14},{h:3,par:4,hcp:8},{h:4,par:4,hcp:18},
       {h:5,par:4,hcp:10},{h:6,par:5,hcp:2},{h:7,par:3,hcp:12},{h:8,par:4,hcp:4},
@@ -822,7 +839,8 @@ const COURSES = {
     ]
   },
   blackjack: {
-    id:'blackjack', name:'Blackjack',
+    id:'blackjack', name:'Blackjack', par:72,
+    tees:{ blue:{name:'Blue', rating:71.7, slope:128}, white:{name:'White', rating:69.0, slope:123} },
     holes:[
       {h:1,par:5,hcp:15},{h:2,par:4,hcp:5},{h:3,par:3,hcp:13},{h:4,par:4,hcp:11},
       {h:5,par:4,hcp:7},{h:6,par:5,hcp:1},{h:7,par:3,hcp:17},{h:8,par:4,hcp:9},
@@ -844,8 +862,8 @@ let G = {
   grossCount: 1,
   skinsType:  'none',
   mode:       'photo',
-  teams:      [],      // [{name,color,players:[{name,hcp,scores:[18]}]}]
-  cards:      [],      // uploaded scorecards [{id,dataUrl,status,foursome:[{name,hcp,scores}]}]
+  teams:      [],      // [{name,color,players:[{name,hcp:GHIN index,tee:'blue'|'white',scores:[18]}]}]
+  cards:      [],      // uploaded scorecards [{id,dataUrl,status,foursome:[{name,hcp,tee,scores}]}]
   reconPool:  [],      // all players from all cards [{...player,teamIdx}]
   scores:     [],      // [hi][ti][pi] — built for manual mode or from photos
   hole:       0,
@@ -916,12 +934,12 @@ function addManualTeam(defaults) {
     <button class="btn-ghost" style="margin-top:4px;" onclick="addManualPlayer(${idx})">+ Add Player</button>
   `;
   wrap.appendChild(card);
-  (defaults||[{name:'',hcp:0},{name:'',hcp:0}]).forEach(p => addManualPlayer(idx, p.name, p.hcp));
+  (defaults||[{name:'',hcp:0},{name:'',hcp:0}]).forEach(p => addManualPlayer(idx, p.name, p.hcp, p.tee||'white'));
 }
 
-function addManualPlayer(ti, name='', hcp='') {
+function addManualPlayer(ti, name='', hcp='', tee='white') {
   const pi = G.teams[ti].players.length;
-  G.teams[ti].players.push({name:'', hcp:0, scores:Array(18).fill(null)});
+  G.teams[ti].players.push({name:'', hcp:0, tee, scores:Array(18).fill(null)});
   const wrap = document.getElementById(`mt-${ti}-players`);
   const row = document.createElement('div');
   row.className = 'player-row';
@@ -929,12 +947,23 @@ function addManualPlayer(ti, name='', hcp='') {
     <div><div class="field-label">Name</div>
       <input type="text" placeholder="Name" value="${name}"
         onchange="G.teams[${ti}].players[${pi}].name=this.value.trim()"></div>
-    <div><div class="field-label">HC</div>
-      <input type="number" placeholder="0" value="${hcp}" min="0" max="36"
-        onchange="G.teams[${ti}].players[${pi}].hcp=parseInt(this.value)||0"></div>
+    <div><div class="field-label">GHIN</div>
+      <input type="number" placeholder="0" value="${hcp}" min="0" max="54" step="0.1"
+        onchange="G.teams[${ti}].players[${pi}].hcp=parseFloat(this.value)||0"></div>
+    <div><div class="field-label">Tee</div>
+      <div class="tee-seg">
+        <button class="tee-btn${tee==='blue'?' on-blue':''}" data-tee="blue" onclick="setRowTee(this,${ti},${pi})">B</button>
+        <button class="tee-btn${tee==='white'?' on-white':''}" data-tee="white" onclick="setRowTee(this,${ti},${pi})">W</button>
+      </div></div>
     <button class="btn-icon-danger" onclick="this.closest('.player-row').remove();G.teams[${ti}].players.splice(${pi},1)">×</button>
   `;
   wrap.appendChild(row);
+}
+
+function setRowTee(btn, ti, pi) {
+  if (G.teams[ti] && G.teams[ti].players[pi]) G.teams[ti].players[pi].tee = btn.dataset.tee;
+  btn.parentElement.querySelectorAll('.tee-btn').forEach(b => b.className = 'tee-btn');
+  btn.classList.add(btn.dataset.tee === 'blue' ? 'on-blue' : 'on-white');
 }
 
 function removeManualTeam(idx) {
@@ -963,10 +992,15 @@ function begin() {
   } else {
     // Read manual players from DOM
     G.teams.forEach((t,ti) => {
-      const names = document.querySelectorAll(`#mt-${ti}-players input[type=text]`);
-      const hcps  = document.querySelectorAll(`#mt-${ti}-players input[type=number]`);
+      const rows = document.querySelectorAll(`#mt-${ti}-players .player-row`);
       t.players = [];
-      names.forEach((el,i) => { if(el.value.trim()) t.players.push({name:el.value.trim(),hcp:parseInt(hcps[i]?.value)||0,scores:Array(18).fill(null)}); });
+      rows.forEach(r => {
+        const name = r.querySelector('input[type=text]')?.value.trim();
+        if (!name) return;
+        const hcp = parseFloat(r.querySelector('input[type=number]')?.value)||0;
+        const tee = r.querySelector('.tee-btn.on-blue') ? 'blue' : 'white';
+        t.players.push({name, hcp, tee, scores:Array(18).fill(null)});
+      });
     });
     if (G.teams.length < 2) { alert('Add at least 2 teams.'); return; }
     if (G.teams.some(t=>t.players.length<1)) { alert('Each team needs at least 1 player.'); return; }
@@ -1020,7 +1054,7 @@ Extract every player on this scorecard. Return ONLY valid JSON, no other text, n
 Rules:
 - scores is always an array of exactly 18 integers (holes 1-18 in order)
 - Use null for any illegible or missing score
-- hcp is their handicap index or course handicap number shown on the card
+- hcp is the handicap number shown for the player (may be a decimal GHIN index like 8.4)
 - Include every player row you can find`;
 
   try {
@@ -1050,7 +1084,8 @@ Rules:
     const ci = G.cards.findIndex(c=>c.id===cardId);
     G.cards[ci].foursome = parsed.players.map(p=>({
       name: p.name||'Unknown',
-      hcp:  parseInt(p.hcp)||0,
+      hcp:  parseFloat(p.hcp)||0,
+      tee:  'white',
       scores: Array.isArray(p.scores) ? p.scores.slice(0,18).map(s=>s!=null?parseInt(s)||null:null) : Array(18).fill(null)
     }));
     G.cards[ci].status = 'done';
@@ -1102,9 +1137,14 @@ function goToReview() {
           <div class="rpc-name" contenteditable="true"
             onblur="G.cards[${ci}].foursome[${pi}].name=this.textContent.trim()">${player.name}</div>
           <div class="rpc-hcp-wrap">
-            <span class="rpc-hcp-label">HC</span>
-            <input class="rpc-hcp-input" type="number" value="${player.hcp}" min="0" max="36"
-              onchange="G.cards[${ci}].foursome[${pi}].hcp=parseInt(this.value)||0">
+            <span class="rpc-hcp-label">GHIN</span>
+            <input class="rpc-hcp-input" type="number" value="${player.hcp}" min="0" max="54" step="0.1"
+              onchange="G.cards[${ci}].foursome[${pi}].hcp=parseFloat(this.value)||0;updateRpcCh(${ci},${pi})">
+            <div class="tee-seg">
+              <button class="tee-btn${player.tee==='blue'?' on-blue':''}" data-tee="blue" onclick="setCardTee(this,${ci},${pi})">B</button>
+              <button class="tee-btn${player.tee!=='blue'?' on-white':''}" data-tee="white" onclick="setCardTee(this,${ci},${pi})">W</button>
+            </div>
+            <span class="rpc-hcp-label" id="rpc-ch-${ci}-${pi}">CH ${courseHcp(player)}</span>
           </div>
         </div>
         <div class="scores-9">
@@ -1140,6 +1180,18 @@ function goToReview() {
   body.appendChild(btnWrap);
 
   go('scr-review');
+}
+
+function setCardTee(btn, ci, pi) {
+  G.cards[ci].foursome[pi].tee = btn.dataset.tee;
+  btn.parentElement.querySelectorAll('.tee-btn').forEach(b => b.className = 'tee-btn');
+  btn.classList.add(btn.dataset.tee === 'blue' ? 'on-blue' : 'on-white');
+  updateRpcCh(ci, pi);
+}
+
+function updateRpcCh(ci, pi) {
+  const el = document.getElementById(`rpc-ch-${ci}-${pi}`);
+  if (el) el.textContent = 'CH ' + courseHcp(G.cards[ci].foursome[pi]);
 }
 
 // ═══════════════════════════════════════
@@ -1231,7 +1283,7 @@ function renderRecon() {
     row.innerHTML = `
       <div class="pp-info">
         <div class="pp-name">${p.name}${p.wildcardTeamIdx!==null?`<span class="wildcard-badge">wildcard</span>`:''}</div>
-        <div class="pp-sub">HC ${p.hcp} · Foursome ${p.cardIdx+1}</div>
+        <div class="pp-sub">IDX ${p.hcp} · <button class="tee-chip ${p.tee==='blue'?'blue':'white'}" onclick="togglePoolTee(${idx})">${teeLabel(p)}</button> · CH ${courseHcp(p)}${p.cardIdx>=0?` · Foursome ${p.cardIdx+1}`:''}</div>
       </div>
       <div class="pool-player-assignments">
         <select class="team-mini-select" onchange="G.reconPool[${idx}].teamIdx=parseInt(this.value)<0?null:parseInt(this.value);renderReconTeamsOnly()">
@@ -1272,6 +1324,14 @@ function renderRecon() {
   body.appendChild(backBtn);
 }
 
+function togglePoolTee(idx) {
+  const p = G.reconPool[idx];
+  p.tee = p.tee === 'blue' ? 'white' : 'blue';
+  // Keep the source card in sync so a trip back to Review doesn't undo it
+  if (p.cardIdx >= 0 && G.cards[p.cardIdx]?.foursome[p.playerIdx]) G.cards[p.cardIdx].foursome[p.playerIdx].tee = p.tee;
+  renderRecon();
+}
+
 function renderReconTeamsOnly() {
   // Lightweight update — just re-render the team assignment displays
   G.teams.forEach((team,ti) => {
@@ -1299,7 +1359,7 @@ function confirmTeams() {
   G.reconPool.forEach(p => {
     if (p.teamIdx===null||p.teamIdx<0||p.teamIdx>=G.teams.length) return;
     G.teams[p.teamIdx].players.push({
-      name:p.name, hcp:p.hcp, scores:p.scores||Array(18).fill(null),
+      name:p.name, hcp:p.hcp, tee:p.tee||'white', scores:p.scores||Array(18).fill(null),
       wildcardTeamIdx: (p.wildcardTeamIdx!==null && p.wildcardTeamIdx!==p.teamIdx) ? p.wildcardTeamIdx : null
     });
   });
@@ -1321,10 +1381,16 @@ function confirmTeams() {
 // ═══════════════════════════════════════
 // ADD PLAYER MODAL
 // ═══════════════════════════════════════
+function setModalTee(btn) {
+  document.querySelectorAll('#modal-tee .tee-btn').forEach(b => b.className = 'tee-btn');
+  btn.classList.add(btn.dataset.tee === 'blue' ? 'on-blue' : 'on-white');
+}
+
 function openModal() {
   G.modalTeam = null;
   document.getElementById('modal-name').value = '';
   document.getElementById('modal-hcp').value = '';
+  document.querySelectorAll('#modal-tee .tee-btn').forEach(b => b.className = 'tee-btn' + (b.dataset.tee === 'white' ? ' on-white' : ''));
   const opts = document.getElementById('modal-team-opts');
   opts.innerHTML = G.teams.map((t,i)=>`
     <button class="modal-team-opt" onclick="G.modalTeam=${i};document.querySelectorAll('.modal-team-opt').forEach(b=>b.classList.remove('on'));this.classList.add('on')">
@@ -1335,9 +1401,10 @@ function openModal() {
 function closeModal() { document.getElementById('add-modal').classList.add('hidden'); }
 function confirmAddPlayer() {
   const name = document.getElementById('modal-name').value.trim();
-  const hcp  = parseInt(document.getElementById('modal-hcp').value)||0;
+  const hcp  = parseFloat(document.getElementById('modal-hcp').value)||0;
+  const tee  = document.querySelector('#modal-tee .tee-btn.on-blue') ? 'blue' : 'white';
   if (!name) { alert('Please enter a name.'); return; }
-  G.reconPool.push({name, hcp, cardIdx:-1, playerIdx:-1, teamIdx:G.modalTeam, wildcardTeamIdx:null, scores:Array(18).fill(null)});
+  G.reconPool.push({name, hcp, tee, cardIdx:-1, playerIdx:-1, teamIdx:G.modalTeam, wildcardTeamIdx:null, scores:Array(18).fill(null)});
   closeModal();
   renderRecon();
 }
@@ -1352,7 +1419,31 @@ function initManualScoring() {
   document.getElementById('nb-eyebrow').textContent = `Live Nassau · ${c.name}`;
 }
 
-function stroke(hcp, holeHcp) { return hcp >= holeHcp; }
+// ═══════════════════════════════════════
+// HANDICAP ENGINE (WHS)
+// p.hcp = GHIN handicap index; p.tee = 'blue' | 'white'
+// Course Handicap = Index × (Slope ÷ 113) + (Rating − Par)
+// ═══════════════════════════════════════
+function courseHcp(p) {
+  const c = course();
+  const tee = c.tees[p.tee] || c.tees.white;
+  return Math.round((p.hcp||0) * tee.slope/113 + (tee.rating - c.par));
+}
+
+// Strokes received on a hole, allocated by stroke index.
+// CH 1–18: one stroke on holes with index ≤ CH. CH > 18: second
+// stroke on the lowest-index holes. Negative (plus) CH gives a
+// stroke back on the highest-index (easiest) holes.
+function strokesOn(ch, holeHcp) {
+  if (ch < 0) return holeHcp > 18 + ch ? -1 : 0;
+  let s = 0;
+  if (ch >= holeHcp) s++;
+  if (ch >= holeHcp + 18) s++;
+  if (ch >= holeHcp + 36) s++;
+  return s;
+}
+
+function teeLabel(p) { return (course().tees[p.tee] || course().tees.white).name; }
 
 function sClass(score, par) {
   if (!score&&score!==0) return '';
@@ -1377,8 +1468,8 @@ function teamScore(ti, hi) {
   const cands = [];
   players.forEach((p,i) => {
     if (!raw[i]) return;
-    const s = stroke(p.hcp, hole.hcp);
-    cands.push({idx:`t${ti}p${i}`, gross:raw[i], net:s?raw[i]-1:raw[i]});
+    const st = strokesOn(courseHcp(p), hole.hcp);
+    cands.push({idx:`t${ti}p${i}`, gross:raw[i], net:raw[i]-st});
   });
 
   // Pull in wildcard players from other teams
@@ -1388,8 +1479,8 @@ function teamScore(ti, hi) {
       if (p.wildcardTeamIdx !== ti) return;
       const wcRaw = G.scores[hi][oti][pi];
       if (!wcRaw) return;
-      const s = stroke(p.hcp, hole.hcp);
-      cands.push({idx:`wc${oti}p${pi}`, gross:wcRaw, net:s?wcRaw-1:wcRaw, isWildcard:true, wcName:p.name});
+      const st = strokesOn(courseHcp(p), hole.hcp);
+      cands.push({idx:`wc${oti}p${pi}`, gross:wcRaw, net:wcRaw-st, isWildcard:true, wcName:p.name});
     });
   });
 
@@ -1500,18 +1591,19 @@ function renderHole() {
     `;
 
     team.players.forEach((p,pi)=>{
-      const s=stroke(p.hcp,hole.hcp);
+      const ch=courseHcp(p);
+      const st=strokesOn(ch,hole.hcp);
       const sc=G.scores[hi][ti][pi];
-      const net=sc!==null?(s?sc-1:sc):null;
+      const net=sc!==null?sc-st:null;
       const role=cm[pi];
       const row=document.createElement('div');
-      row.className='player-score-row'+(s?' stroker':'');
+      row.className='player-score-row'+(st!==0?' stroker':'');
       row.innerHTML=`
         <div class="psr-info">
           <div class="psr-name">${p.name}${role?`<span class="contrib-tag ${role}">${role}</span>`:''}</div>
-          <div class="psr-hcp">HC ${p.hcp}</div>
+          <div class="psr-hcp">IDX ${p.hcp} · ${teeLabel(p)} · CH ${ch}</div>
         </div>
-        <div class="stroke-pip">${s?'●':''}</div>
+        <div class="stroke-pip">${st>0?'●'.repeat(st):st<0?'+':''}</div>
         <div class="stepper">
           <button class="step-btn" onclick="adj(${ti},${pi},-1,${hi})">−</button>
           <div class="step-num ${sClass(sc,hole.par)}" id="sn-${ti}-${pi}">${sc??'—'}</div>
@@ -1532,10 +1624,10 @@ function adj(ti,pi,delta,hi) {
   let v=(G.scores[hi][ti][pi]??hole.par)+delta;
   v=Math.max(1,Math.min(15,v));
   G.scores[hi][ti][pi]=v;
-  const s=stroke(G.teams[ti].players[pi].hcp,hole.hcp);
+  const st=strokesOn(courseHcp(G.teams[ti].players[pi]),hole.hcp);
   const el=document.getElementById(`sn-${ti}-${pi}`);
   el.textContent=v; el.className=`step-num ${sClass(v,hole.par)}`;
-  document.getElementById(`nl-${ti}-${pi}`).textContent=s?v-1:v;
+  document.getElementById(`nl-${ti}-${pi}`).textContent=v-st;
   refreshTsum(ti,hi);
   updateNassauBar();
 }
@@ -1701,8 +1793,8 @@ function go(id) {
 // ═══════════════════════════════════════
 updateFP();
 // Pre-populate 2 manual teams for convenience
-addManualTeam([{name:'Devin',hcp:8},{name:'Pat',hcp:2},{name:'Paul',hcp:8},{name:'Rob',hcp:8}]);
-addManualTeam([{name:'Craig',hcp:8},{name:'Greg',hcp:2},{name:'Steve',hcp:13},{name:'John',hcp:4}]);
+addManualTeam([{name:'Devin',hcp:8,tee:'white'},{name:'Pat',hcp:2,tee:'white'},{name:'Paul',hcp:8,tee:'white'},{name:'Rob',hcp:8,tee:'white'}]);
+addManualTeam([{name:'Craig',hcp:8,tee:'white'},{name:'Greg',hcp:2,tee:'white'},{name:'Steve',hcp:13,tee:'white'},{name:'John',hcp:4,tee:'white'}]);
 </script>
 </body>
 </html>
