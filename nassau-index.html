@@ -776,6 +776,21 @@ input::placeholder { color: rgba(242,246,252,0.35); }
 .nbt-tab.on .nbt-name { color: var(--parch); }
 .nbt-score { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 700; color: var(--gold); }
 .nb-cell { max-width: 220px; }
+
+/* — the bet board (2026-08-22) — */
+.bet-scores-grid { display: grid; grid-template-columns: 1fr repeat(3, 64px); gap: 2px 6px; align-items: center; padding: 12px 14px; }
+.bsg-head { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1px; color: var(--gold); text-align: center; text-transform: uppercase; padding-bottom: 4px; }
+.bsg-team { font-size: 15px; font-weight: 500; display: flex; align-items: center; gap: 7px; padding: 7px 0; }
+.bsg-val { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 700; text-align: center; }
+.bsg-par { display: block; font-family: 'DM Mono', monospace; font-size: 9px; color: var(--parch-dim); font-weight: 400; }
+.board-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 12px 14px; }
+.board-grid { display: grid; gap: 3px; }
+.bd-head, .bd-cell, .bd-name { height: 34px; display: flex; align-items: center; justify-content: center; border-radius: 6px; }
+.bd-head { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--parch-dim); }
+.bd-head.tied { color: var(--gold); }
+.bd-name { position: sticky; left: 0; z-index: 2; background: var(--ink-mid); justify-content: flex-start; gap: 6px; padding: 0 8px; font-family: 'DM Mono', monospace; font-size: 11px; white-space: nowrap; }
+.bd-cell { background: rgba(255,255,255,0.05); font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 500; }
+.board-hint { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--parch-dim); padding: 0 14px 12px; letter-spacing: 0.5px; }
 </style>
 </head>
 <body>
@@ -965,6 +980,18 @@ input::placeholder { color: rgba(242,246,252,0.35); }
     <p class="hdr-sub" id="results-sub">Fair Oaks Ranch</p>
   </div>
   <div class="scroll-body" id="results-body"></div>
+</div>
+
+<!-- ════════════════════════════════
+     SCREEN · THE BET (full board)
+════════════════════════════════ -->
+<div id="scr-bet" class="screen">
+  <div class="app-header">
+    <div class="hdr-eyebrow" id="bet-eyebrow">The Bet</div>
+    <h1 class="hdr-title">The <em>Board</em></h1>
+    <p class="hdr-sub" id="bet-sub">Fair Oaks Ranch</p>
+  </div>
+  <div class="scroll-body" id="bet-body"></div>
 </div>
 
 <!-- ADD PLAYER MODAL -->
@@ -1908,10 +1935,99 @@ function updateNassauBar() {
     return`<span class="nb-val" style="color:${t.color}">${t.name} +${s.margin}</span>`;
   }
   document.getElementById('nb-matchups').innerHTML=`
-    <div class="nb-cell" style="max-width:none;flex:1;">
-      <div class="nb-label">The Bet · holes won</div>
+    <div class="nb-cell" style="max-width:none;flex:1;cursor:pointer;" onclick="showBet('scr-scoring')">
+      <div class="nb-label">The Bet · holes won · tap for the board ▸</div>
       <div class="nb-scores-row">F: ${ms(B.front)} · B: ${ms(B.back)} · O: ${ms(B.overall)}</div>
     </div>`;
+}
+
+// ═══════════════════════════════════════
+// THE BET — full board view
+// ═══════════════════════════════════════
+function showBet(from) {
+  G.betReturn = from || 'scr-scoring';
+  renderBetView();
+  go('scr-bet');
+}
+
+function renderBetView() {
+  const c=course();
+  const{holes}=nassau();
+  const B=betSegments(holes);
+  const needed=G.netCount+G.grossCount;
+  const sk=G.skinsType!=='none'?skins(holes):[];
+  const skMap={}; sk.forEach(s=>skMap[s.hole-1]=s);
+
+  document.getElementById('bet-eyebrow').textContent=`The Bet · ${c.name}`;
+  document.getElementById('bet-sub').textContent=`${G.netCount}N + ${G.grossCount}G · $1 Front · $1 Back · $1 Overall${G.skinsType!=='none'?' · '+cap(G.skinsType)+' skins':''}`;
+
+  function segTotal(ti,lo,hi){
+    let s=0,par=0,any=false;
+    for(let i=lo;i<=hi;i++){
+      const v=holes[i].trs[ti].total;
+      if(v!==null){s+=v;par+=c.holes[i].par*needed;any=true;}
+    }
+    if(!any) return {txt:'—',par:''};
+    const d=s-par;
+    return {txt:s, par:d===0?'E':d>0?`+${d}`:`${d}`};
+  }
+
+  // 1 — team scores F/B/O
+  const scoreRows=G.teams.map((t,ti)=>{
+    const f=segTotal(ti,0,8), b=segTotal(ti,9,17), o=segTotal(ti,0,17);
+    return`
+      <div class="bsg-team"><span class="team-chip" style="background:${t.color}"></span>${t.name}</div>
+      <div class="bsg-val">${f.txt}<span class="bsg-par">${f.par}</span></div>
+      <div class="bsg-val">${b.txt}<span class="bsg-par">${b.par}</span></div>
+      <div class="bsg-val" style="color:var(--gold)">${o.txt}<span class="bsg-par">${o.par}</span></div>`;
+  }).join('');
+
+  // 2 — the Nassau settlement
+  const per=G.teams.length-1;
+  const SEGS=[['Front 9',B.front],['Back 9',B.back],['Overall',B.overall]];
+  const betRows=SEGS.map(([label,s])=>{
+    const detail=G.teams.map((t,i)=>`${t.name.replace('Team ','T')} ${s.wins[i]}`).join(' · ');
+    const txt=s.winner===null?'Push':`${G.teams[s.winner].name} wins $${per}`;
+    const cls=s.winner===null?'push':'win';
+    return`<div class="pc-row"><span class="label">${label}&nbsp;<span style="font-size:11px;opacity:.65;">${detail}</span></span><span class="val ${cls}">${txt}</span></div>`;
+  }).join('');
+
+  // 3 — hole-by-hole winner board (rotate for full 18)
+  const cols=`88px repeat(18, 34px)`;
+  let grid=`<div class="board-grid" style="grid-template-columns:${cols};">`;
+  grid+=`<div class="bd-head" style="position:sticky;left:0;z-index:2;background:var(--ink-mid);">HOLE</div>`;
+  c.holes.forEach((h,hi)=>{ grid+=`<div class="bd-head${holes[hi].tie?' tied':''}">${h.h}</div>`; });
+  G.teams.forEach((t,ti)=>{
+    grid+=`<div class="bd-name"><span class="team-chip" style="background:${t.color}"></span>${t.name.replace('Team ','T')}</div>`;
+    c.holes.forEach((h,hi)=>{
+      const hres=holes[hi];
+      if(hres.winner===ti){
+        const pot=skMap[hi]&&skMap[hi].ti===ti&&skMap[hi].pot>1?'$'+skMap[hi].pot:'●';
+        grid+=`<div class="bd-cell" style="background:${t.color};color:var(--ink);">${pot}</div>`;
+      } else {
+        grid+=`<div class="bd-cell">${hres.tie?'·':''}</div>`;
+      }
+    });
+  });
+  grid+=`</div>`;
+
+  document.getElementById('bet-body').innerHTML=`
+    <div class="sec-label">Team Scores</div>
+    <div class="payout-card">
+      <div class="bet-scores-grid">
+        <div></div><div class="bsg-head">Front</div><div class="bsg-head">Back</div><div class="bsg-head">Overall</div>
+        ${scoreRows}
+      </div>
+    </div>
+    <div class="sec-label">The Nassau</div>
+    <div class="payout-card">${betRows}</div>
+    <div class="sec-label">Hole by Hole</div>
+    <div class="payout-card">
+      <div class="board-scroll">${grid}</div>
+      <div class="board-hint">● hole won · &middot; tied · ${G.skinsType!=='none'?'$N = skin with carried pot · ':''}rotate the phone for the full 18</div>
+    </div>
+    <div style="height:14px;"></div>
+    <button class="btn-primary" onclick="go(G.betReturn||'scr-scoring')">← Back</button>`;
 }
 
 function prevHole(){if(G.hole>0){G.hole--;renderHole();}}
@@ -2012,6 +2128,7 @@ function showResults() {
           <span class="val ${net[i]>0?'win':net[i]<0?'lose':'push'}">${net[i]<0?'−':'+'}$${Math.abs(net[i]).toFixed(2)}</span>
         </div>`).join('')}
     </div>
+    <button class="btn-secondary" style="margin-bottom:12px;" onclick="showBet('scr-results')">Show the Bet — Full Board →</button>
     <div class="tab-row">
       <button class="tab-btn on" data-t="nassau" onclick="switchTab('nassau')">Nassau</button>
       ${G.skinsType!=='none'?`<button class="tab-btn" data-t="skins" onclick="switchTab('skins')">Skins</button>`:''}
@@ -2062,6 +2179,7 @@ document.addEventListener('change', () => saveState());
   try { saved = JSON.parse(localStorage.getItem(SAVE_KEY)); } catch(e) { return; }
   if (!saved || !saved.G) return;
   const RESUMABLE = ['scr-scoring','scr-review','scr-reconcile','scr-results'];
+  if (saved.phase === 'scr-bet') saved.phase = saved.G.betReturn || 'scr-scoring';
   const midSetup = !RESUMABLE.includes(saved.phase) && anyScoresEntered(saved.G.scores);
   if (!RESUMABLE.includes(saved.phase) && !midSetup) return;
   if (Date.now() - saved.t > 18*3600*1000) { clearSavedRound(); return; }
