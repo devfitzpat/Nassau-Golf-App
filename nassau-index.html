@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Nassau">
-<meta name="theme-color" content="#0a1a0a">
+<meta name="theme-color" content="#142914">
 <title>Nassau</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -16,9 +16,9 @@
    DESIGN TOKENS
 ═══════════════════════════════════ */
 :root {
-  --ink:       #0a1a0a;
-  --ink-mid:   #162416;
-  --ink-light: #243824;
+  --ink:       #142914;
+  --ink-mid:   #1e361e;
+  --ink-light: #2c452c;
   --moss:      #3d6b3d;
   --sage:      #6b9e6b;
   --gold:      #c8a84b;
@@ -121,8 +121,8 @@ body {
    CARDS
 ═══════════════════════════════════ */
 .card {
-  background: rgba(255,255,255,0.035);
-  border: 1px solid rgba(255,255,255,0.07);
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.12);
   border-radius: var(--r);
   padding: 14px;
   margin-bottom: 10px;
@@ -136,7 +136,7 @@ body {
 .course-tile {
   border-radius: var(--r);
   border: 2px solid rgba(255,255,255,0.08);
-  background: rgba(255,255,255,0.03);
+  background: rgba(255,255,255,0.06);
   padding: 16px 12px; cursor: pointer;
   text-align: center; transition: all 0.2s;
   position: relative; overflow: hidden;
@@ -170,8 +170,8 @@ body {
 ═══════════════════════════════════ */
 .seg-wrap {
   display: flex;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.07);
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
   border-radius: 10px; padding: 3px; gap: 2px;
 }
 .seg-btn {
@@ -210,7 +210,7 @@ body {
 .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .mode-tile {
   border-radius: var(--r); border: 2px solid rgba(255,255,255,0.08);
-  background: rgba(255,255,255,0.03); padding: 16px 10px;
+  background: rgba(255,255,255,0.06); padding: 16px 10px;
   cursor: pointer; text-align: center; transition: all 0.2s;
 }
 .mode-tile.selected { border-color: var(--gold); background: rgba(200,168,75,0.06); }
@@ -229,11 +229,11 @@ body {
    (.score-hole-input, .rpc-hcp-input) win as intended */
 :where(input[type=text], input[type=number]) {
   width: 100%;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.16);
   border-radius: 10px; padding: 10px 13px;
   color: var(--parch);
-  font-family: 'DM Sans', sans-serif; font-size: 15px;
+  font-family: 'DM Sans', sans-serif; font-size: 16px;
   outline: none; -webkit-appearance: none;
   transition: border-color 0.15s;
 }
@@ -247,8 +247,8 @@ input::placeholder { color: rgba(240,235,224,0.2); }
 .team-card {
   border-radius: var(--r); padding: 14px;
   margin-bottom: 12px;
-  border: 1px solid rgba(255,255,255,0.07);
-  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.05);
 }
 .team-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
 .team-card-title {
@@ -292,7 +292,7 @@ input::placeholder { color: rgba(240,235,224,0.2); }
   display: flex; align-items: center; justify-content: center;
   width: 100%; padding: 11px;
   background: transparent;
-  border: 1px dashed rgba(255,255,255,0.15);
+  border: 1px dashed rgba(255,255,255,0.22);
   color: rgba(240,235,224,0.45);
   font-family: 'DM Mono', monospace; font-size: 11px;
   border-radius: 10px; cursor: pointer; margin-top: 6px;
@@ -325,7 +325,7 @@ input::placeholder { color: rgba(240,235,224,0.2); }
 .ud-sub { font-size: 12px; color: var(--parch-dim); }
 
 .scorecard-card {
-  background: rgba(255,255,255,0.03);
+  background: rgba(255,255,255,0.06);
   border: 1px solid rgba(200,168,75,0.2);
   border-radius: var(--r); margin-bottom: 10px; overflow: hidden;
 }
@@ -352,11 +352,11 @@ input::placeholder { color: rgba(240,235,224,0.2); }
   text-transform: uppercase; color: var(--gold); margin-bottom: 8px;
 }
 .review-player-card {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.07);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
   border-radius: var(--r); margin-bottom: 8px; overflow: hidden;
 }
-.rpc-header { background: rgba(255,255,255,0.04); padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; }
+.rpc-header { background: rgba(255,255,255,0.08); padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; }
 .rpc-name { font-size: 15px; font-weight: 600; }
 .rpc-hcp-wrap { display: flex; align-items: center; gap: 6px; }
 .rpc-hcp-label { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--parch-dim); }
@@ -367,7 +367,7 @@ input::placeholder { color: rgba(240,235,224,0.2); }
 .score-hole-input {
   width: 100%; padding: 5px 2px; text-align: center;
   font-family: 'Cormorant Garamond', serif; font-size: 16px; font-weight: 700;
-  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09);
+  background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.09);
   border-radius: 5px; color: var(--parch);
 }
 .score-hole-input:focus { border-color: var(--gold); background: rgba(200,168,75,0.08); outline: none; }
@@ -378,8 +378,8 @@ input::placeholder { color: rgba(240,235,224,0.2); }
 .recon-team-card {
   border-radius: var(--r); padding: 13px 14px;
   margin-bottom: 10px;
-  border: 1px solid rgba(255,255,255,0.07);
-  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.05);
 }
 .rtc-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .rtc-name-input {
@@ -392,8 +392,8 @@ input::placeholder { color: rgba(240,235,224,0.2); }
 .rtc-players { display: flex; flex-wrap: wrap; gap: 6px; min-height: 28px; }
 .player-chip {
   display: inline-flex; align-items: center; gap: 5px;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.16);
   border-radius: 20px; padding: 4px 10px; font-size: 12px;
 }
 .player-chip .chip-remove { background: none; border: none; color: rgba(240,235,224,0.35); cursor: pointer; font-size: 15px; padding: 0; line-height: 1; margin-left: 2px; }
@@ -402,13 +402,13 @@ input::placeholder { color: rgba(240,235,224,0.2); }
 .pool-section { margin-bottom: 18px; }
 .pool-player {
   display: flex; align-items: center; justify-content: space-between;
-  background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07);
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
   border-radius: 10px; padding: 10px 14px; margin-bottom: 7px;
 }
 .pp-info .pp-name { font-size: 14px; font-weight: 500; }
 .pp-info .pp-sub { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--parch-dim); margin-top: 2px; }
 .team-mini-select {
-  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.18);
   border-radius: 8px; padding: 6px 10px; color: var(--parch);
   font-family: 'DM Mono', monospace; font-size: 11px;
   outline: none; -webkit-appearance: none; cursor: pointer; min-width: 90px;
@@ -442,8 +442,8 @@ input::placeholder { color: rgba(240,235,224,0.2); }
 .hole-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .hole-nav-btn {
   width: 40px; height: 40px; border-radius: 50%;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.16);
   color: var(--gold); font-size: 22px; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   transition: background 0.15s;
@@ -458,17 +458,17 @@ input::placeholder { color: rgba(240,235,224,0.2); }
 .hole-meta { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--parch-dim); letter-spacing: 1px; margin-top: 3px; }
 .hole-format { font-family: 'DM Mono', monospace; font-size: 8px; color: rgba(200,168,75,0.6); letter-spacing: 0.5px; margin-top: 2px; }
 .progress-track { display: flex; gap: 2px; margin-top: 10px; }
-.prog-dot { flex: 1; height: 2px; border-radius: 2px; background: rgba(255,255,255,0.07); transition: background 0.3s; }
+.prog-dot { flex: 1; height: 2px; border-radius: 2px; background: rgba(255,255,255,0.12); transition: background 0.3s; }
 .prog-dot.done { background: var(--gold); }
 .prog-dot.now { background: var(--sage); }
 
 .score-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 14px 16px 170px; }
 
 /* TEAM BLOCK */
-.team-block { margin-bottom: 12px; border-radius: var(--r); overflow: hidden; border: 1px solid rgba(255,255,255,0.07); }
+.team-block { margin-bottom: 12px; border-radius: var(--r); overflow: hidden; border: 1px solid rgba(255,255,255,0.12); }
 .team-block-hdr {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 9px 14px; background: rgba(255,255,255,0.04);
+  padding: 9px 14px; background: rgba(255,255,255,0.08);
 }
 .tbh-name { font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 500; display: flex; align-items: center; gap: 6px; }
 .tbh-score { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--parch-dim); }
@@ -477,7 +477,7 @@ input::placeholder { color: rgba(240,235,224,0.2); }
 .player-score-row {
   display: grid; grid-template-columns: 1fr 16px 86px 28px;
   gap: 6px; align-items: center;
-  padding: 9px 14px; border-top: 1px solid rgba(255,255,255,0.04);
+  padding: 9px 14px; border-top: 1px solid rgba(255,255,255,0.08);
 }
 .player-score-row.stroker { background: rgba(200,168,75,0.03); }
 .psr-info .psr-name { font-size: 13px; font-weight: 500; }
@@ -486,12 +486,12 @@ input::placeholder { color: rgba(240,235,224,0.2); }
 .stepper { display: flex; align-items: center; }
 .step-btn {
   width: 28px; height: 34px; border-radius: 7px;
-  background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.16);
   color: var(--parch); font-size: 18px; cursor: pointer;
   display: flex; align-items: center; justify-content: center; line-height: 1;
   transition: background 0.1s;
 }
-.step-btn:active { background: rgba(255,255,255,0.15); }
+.step-btn:active { background: rgba(255,255,255,0.22); }
 .step-num {
   width: 30px; text-align: center;
   font-family: 'Cormorant Garamond', serif;
@@ -518,7 +518,7 @@ input::placeholder { color: rgba(240,235,224,0.2); }
 ═══════════════════════════════════ */
 .nassau-bar {
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
-  background: linear-gradient(180deg, rgba(10,26,10,0.96) 0%, var(--ink) 100%);
+  background: linear-gradient(180deg, rgba(20,41,20,0.96) 0%, var(--ink) 100%);
   border-top: 1px solid rgba(200,168,75,0.35);
   padding: 10px 16px calc(12px + var(--safe-bot));
   backdrop-filter: blur(16px);
@@ -532,7 +532,7 @@ input::placeholder { color: rgba(240,235,224,0.2); }
 .nb-matchups::-webkit-scrollbar { display: none; }
 .nb-cell {
   flex: 1; min-width: 72px; max-width: 140px;
-  background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07);
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
   border-radius: 8px; padding: 6px 6px; text-align: center;
 }
 .nb-label { font-family: 'DM Mono', monospace; font-size: 7px; color: rgba(240,235,224,0.3); margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -548,9 +548,9 @@ input::placeholder { color: rgba(240,235,224,0.2); }
 .rh-winner { font-family: 'Cormorant Garamond', serif; font-size: 38px; font-weight: 700; line-height: 1.1; }
 .rh-sub { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--parch-dim); margin-top: 6px; }
 
-.payout-card { background: rgba(255,255,255,0.025); border: 1px solid rgba(200,168,75,0.18); border-radius: var(--r); overflow: hidden; margin-bottom: 12px; }
+.payout-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(200,168,75,0.18); border-radius: var(--r); overflow: hidden; margin-bottom: 12px; }
 .pc-header { background: rgba(200,168,75,0.07); padding: 8px 14px; font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-.pc-row { display: flex; justify-content: space-between; align-items: center; padding: 11px 14px; border-top: 1px solid rgba(255,255,255,0.04); font-size: 14px; }
+.pc-row { display: flex; justify-content: space-between; align-items: center; padding: 11px 14px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 14px; }
 .pc-row .label { color: rgba(240,235,224,0.6); display: flex; align-items: center; gap: 5px; }
 .pc-row .val { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 700; }
 .val.win { color: #68d391; }
@@ -558,8 +558,8 @@ input::placeholder { color: rgba(240,235,224,0.2); }
 .val.push { color: var(--gold); }
 
 .tab-row {
-  display: flex; background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.07);
+  display: flex; background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
   border-radius: 10px; padding: 3px; margin-bottom: 12px;
 }
 .tab-btn {
@@ -572,7 +572,7 @@ input::placeholder { color: rgba(240,235,224,0.2); }
 
 .holes-table { width: 100%; border-collapse: collapse; font-size: 10px; font-family: 'DM Mono', monospace; }
 .holes-table th { background: rgba(200,168,75,0.07); color: var(--gold); padding: 7px 4px; text-align: center; font-size: 8px; letter-spacing: 1px; }
-.holes-table td { padding: 7px 4px; text-align: center; border-top: 1px solid rgba(255,255,255,0.04); color: var(--parch); }
+.holes-table td { padding: 7px 4px; text-align: center; border-top: 1px solid rgba(255,255,255,0.08); color: var(--parch); }
 .holes-table tr:nth-child(even) td { background: rgba(255,255,255,0.015); }
 .ht-win { color: #68d391; font-weight: 600; }
 .ht-tie { color: var(--gold); }
@@ -593,8 +593,8 @@ input::placeholder { color: rgba(240,235,224,0.2); }
 .modal-team-opts { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
 .modal-team-opt {
   padding: 8px 14px; border-radius: 20px;
-  border: 1.5px solid rgba(255,255,255,0.12);
-  background: rgba(255,255,255,0.03);
+  border: 1.5px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.06);
   color: var(--parch); font-size: 13px; cursor: pointer;
   display: flex; align-items: center; gap: 6px; transition: all 0.15s;
 }
@@ -604,9 +604,11 @@ input::placeholder { color: rgba(240,235,224,0.2); }
 .tee-seg { display: inline-flex; border: 1px solid rgba(200,168,75,0.25); border-radius: 6px; overflow: hidden; }
 .tee-btn { padding: 5px 9px; font-family: 'DM Mono', monospace; font-size: 9px; background: transparent; border: none; color: var(--parch-dim); cursor: pointer; }
 .tee-btn.on-blue { background: #2b6cb0; color: #fff; }
+.tee-btn.on-oaks { background: #6b9e6b; color: #0e1c0e; }
 .tee-btn.on-white { background: #e2e8f0; color: #1a202c; }
 .tee-chip { font-family: 'DM Mono', monospace; font-size: 9px; padding: 1px 7px; border-radius: 5px; border: 1px solid rgba(200,168,75,0.3); background: transparent; color: var(--parch-dim); cursor: pointer; }
 .tee-chip.blue { background: #2b6cb0; color: #fff; border-color: #2b6cb0; }
+.tee-chip.oaks { background: #6b9e6b; color: #0e1c0e; border-color: #6b9e6b; }
 .tee-chip.white { background: #e2e8f0; color: #1a202c; border-color: #e2e8f0; }
 
 /* ═══════════════════════════════════
@@ -658,7 +660,52 @@ input::placeholder { color: rgba(240,235,224,0.2); }
 .wildcard-badge { font-size: 8px; }
 input::placeholder { color: rgba(240,235,224,0.35); }
 .card, .team-card, .team-block, .review-player-card, .pool-player, .recon-team-card { border-color: rgba(255,255,255,0.14); }
-.step-btn, .score-hole-input { border-color: rgba(255,255,255,0.2); }
+.step-btn, .score-hole-input { border-color: rgba(255,255,255,0.25); }
+
+/* — daylight pass 2 (2026-08-22): bigger type, three-tee toggles — */
+.player-row { grid-template-columns: 1fr 56px 98px 32px; }
+.player-row input[type=number] { padding: 10px 4px; text-align: center; font-size: 15px; }
+.tee-btn { padding: 11px 8px; font-size: 11px; }
+.tee-chip { font-size: 11px; }
+.rpc-header { flex-wrap: wrap; row-gap: 8px; }
+.field-label { font-size: 11px; }
+.sec-label { font-size: 10px; }
+.hdr-sub { font-size: 12px; }
+.fp-value { font-size: 14px; }
+.seg-btn { font-size: 14px; }
+.psr-info .psr-name { font-size: 15px; }
+.psr-info .psr-hcp { font-size: 11px; }
+.pp-info .pp-name { font-size: 15px; }
+.pp-info .pp-sub { font-size: 11px; }
+.rpc-name { font-size: 16px; }
+.rpc-hcp-label { font-size: 11px; }
+.net-label { font-size: 12px; }
+.nb-val { font-size: 15px; }
+.nb-label { font-size: 9px; }
+.nb-scores-row { font-size: 10px; }
+.hole-meta { font-size: 11px; }
+.hole-format { font-size: 10px; }
+.tbh-name { font-size: 11px; }
+.tbh-score { font-size: 11px; }
+.tbh-score b { font-size: 13px; }
+.score-hole-label { font-size: 10px; }
+.score-hole-input { font-size: 18px; }
+.sc-player-line { font-size: 12px; }
+.team-mini-select, .wildcard-select { font-size: 12px; }
+.rtc-count { font-size: 11px; }
+.ct-sub { font-size: 9.5px; letter-spacing: 0.5px; }
+.ct-par { font-size: 11px; }
+.mode-sub { font-size: 10px; }
+.pc-row { font-size: 15px; }
+.pc-header { font-size: 10px; }
+.holes-table { font-size: 12px; }
+.holes-table th { font-size: 10px; }
+.contrib-tag { font-size: 9px; }
+.wildcard-badge { font-size: 9px; }
+.review-group-label { font-size: 10px; }
+.empty-team { font-size: 10px; }
+.btn-ghost { font-size: 12px; color: rgba(240,235,224,0.6); }
+.ud-sub { font-size: 13px; }
 </style>
 </head>
 <body>
@@ -681,13 +728,13 @@ input::placeholder { color: rgba(240,235,224,0.35); }
         <div class="ct-name">Live Oak</div>
         <div class="ct-sub">GARY PLAYER · 1978</div>
         <div class="ct-par">Par 72</div>
-        <div class="ct-sub">B 71.4/128 · W 69.5/115</div>
+        <div class="ct-sub">B 71.4/128 · O 70.2/121 · W 69.5/115</div>
       </div>
       <div class="course-tile" id="ctile-blackjack" onclick="selectCourse('blackjack')">
         <div class="ct-name">Blackjack</div>
         <div class="ct-sub">PLAYER · GRIFFITH</div>
         <div class="ct-par">Par 72</div>
-        <div class="ct-sub">B 71.7/128 · W 69.0/123</div>
+        <div class="ct-sub">B 71.7/128 · O 70.4/126 · W 69.0/123</div>
       </div>
     </div>
 
@@ -860,6 +907,7 @@ input::placeholder { color: rgba(240,235,224,0.35); }
     <div class="field-label" style="margin-bottom:6px;">Tee</div>
     <div class="tee-seg" id="modal-tee" style="margin-bottom:12px;">
       <button class="tee-btn" data-tee="blue" onclick="setModalTee(this)">Blue</button>
+      <button class="tee-btn" data-tee="oaks" onclick="setModalTee(this)">Oaks</button>
       <button class="tee-btn on-white" data-tee="white" onclick="setModalTee(this)">White</button>
     </div>
     <div class="field-label" style="margin-bottom:8px;">Assign to Team</div>
@@ -882,7 +930,7 @@ const COURSES = {
   liveoak: {
     id:'liveoak', name:'Live Oak', par:72,
     // Men's ratings, USGA course database (verified 2026-08-21)
-    tees:{ blue:{name:'Blue', rating:71.4, slope:128}, white:{name:'White', rating:69.5, slope:115} },
+    tees:{ blue:{name:'Blue', rating:71.4, slope:128}, oaks:{name:'Oaks', rating:70.2, slope:121}, white:{name:'White', rating:69.5, slope:115} },
     holes:[
       {h:1,par:4,hcp:6},{h:2,par:3,hcp:14},{h:3,par:4,hcp:8},{h:4,par:4,hcp:18},
       {h:5,par:4,hcp:10},{h:6,par:5,hcp:2},{h:7,par:3,hcp:12},{h:8,par:4,hcp:4},
@@ -893,7 +941,7 @@ const COURSES = {
   },
   blackjack: {
     id:'blackjack', name:'Blackjack', par:72,
-    tees:{ blue:{name:'Blue', rating:71.7, slope:128}, white:{name:'White', rating:69.0, slope:123} },
+    tees:{ blue:{name:'Blue', rating:71.7, slope:128}, oaks:{name:'Oaks', rating:70.4, slope:126}, white:{name:'White', rating:69.0, slope:123} },
     holes:[
       {h:1,par:5,hcp:15},{h:2,par:4,hcp:5},{h:3,par:3,hcp:13},{h:4,par:4,hcp:11},
       {h:5,par:4,hcp:7},{h:6,par:5,hcp:1},{h:7,par:3,hcp:17},{h:8,par:4,hcp:9},
@@ -1026,6 +1074,7 @@ function addManualPlayer(ti, name='', hcp='', tee='white') {
     <div><div class="field-label">Tee</div>
       <div class="tee-seg">
         <button class="tee-btn${tee==='blue'?' on-blue':''}" data-tee="blue" onclick="setRowTee(this,${ti},${pi})">B</button>
+        <button class="tee-btn${tee==='oaks'?' on-oaks':''}" data-tee="oaks" onclick="setRowTee(this,${ti},${pi})">O</button>
         <button class="tee-btn${tee==='white'?' on-white':''}" data-tee="white" onclick="setRowTee(this,${ti},${pi})">W</button>
       </div></div>
     <button class="btn-icon-danger" onclick="this.closest('.player-row').remove();G.teams[${ti}].players.splice(${pi},1)">×</button>
@@ -1036,8 +1085,13 @@ function addManualPlayer(ti, name='', hcp='', tee='white') {
 function setRowTee(btn, ti, pi) {
   if (G.teams[ti] && G.teams[ti].players[pi]) G.teams[ti].players[pi].tee = btn.dataset.tee;
   btn.parentElement.querySelectorAll('.tee-btn').forEach(b => b.className = 'tee-btn');
-  btn.classList.add(btn.dataset.tee === 'blue' ? 'on-blue' : 'on-white');
+  btn.classList.add('on-' + btn.dataset.tee);
   saveState();
+}
+
+function teeFromSeg(container) {
+  const on = container.querySelector('.tee-btn[class*="on-"]');
+  return on ? on.dataset.tee : 'white';
 }
 
 function removeManualTeam(idx) {
@@ -1072,7 +1126,7 @@ function begin() {
         const name = r.querySelector('input[type=text]')?.value.trim();
         if (!name) return;
         const hcp = parseFloat(r.querySelector('input[type=number]')?.value)||0;
-        const tee = r.querySelector('.tee-btn.on-blue') ? 'blue' : 'white';
+        const tee = teeFromSeg(r);
         t.players.push({name, hcp, tee, scores:Array(18).fill(null)});
       });
     });
@@ -1217,7 +1271,8 @@ function goToReview() {
               onchange="G.cards[${ci}].foursome[${pi}].hcp=parseFloat(this.value)||0;updateRpcCh(${ci},${pi})">
             <div class="tee-seg">
               <button class="tee-btn${player.tee==='blue'?' on-blue':''}" data-tee="blue" onclick="setCardTee(this,${ci},${pi})">B</button>
-              <button class="tee-btn${player.tee!=='blue'?' on-white':''}" data-tee="white" onclick="setCardTee(this,${ci},${pi})">W</button>
+              <button class="tee-btn${player.tee==='oaks'?' on-oaks':''}" data-tee="oaks" onclick="setCardTee(this,${ci},${pi})">O</button>
+              <button class="tee-btn${(player.tee||'white')==='white'?' on-white':''}" data-tee="white" onclick="setCardTee(this,${ci},${pi})">W</button>
             </div>
             <span class="rpc-hcp-label" id="rpc-ch-${ci}-${pi}">CH ${courseHcp(player)}</span>
           </div>
@@ -1260,7 +1315,7 @@ function goToReview() {
 function setCardTee(btn, ci, pi) {
   G.cards[ci].foursome[pi].tee = btn.dataset.tee;
   btn.parentElement.querySelectorAll('.tee-btn').forEach(b => b.className = 'tee-btn');
-  btn.classList.add(btn.dataset.tee === 'blue' ? 'on-blue' : 'on-white');
+  btn.classList.add('on-' + btn.dataset.tee);
   updateRpcCh(ci, pi);
   saveState();
 }
@@ -1359,7 +1414,7 @@ function renderRecon() {
     row.innerHTML = `
       <div class="pp-info">
         <div class="pp-name">${p.name}${p.wildcardTeamIdx!==null?`<span class="wildcard-badge">wildcard</span>`:''}</div>
-        <div class="pp-sub">IDX ${p.hcp} · <button class="tee-chip ${p.tee==='blue'?'blue':'white'}" onclick="togglePoolTee(${idx})">${teeLabel(p)}</button> · CH ${courseHcp(p)}${p.cardIdx>=0?` · Foursome ${p.cardIdx+1}`:''}</div>
+        <div class="pp-sub">IDX ${p.hcp} · <button class="tee-chip ${p.tee||'white'}" onclick="togglePoolTee(${idx})">${teeLabel(p)}</button> · CH ${courseHcp(p)}${p.cardIdx>=0?` · Foursome ${p.cardIdx+1}`:''}</div>
       </div>
       <div class="pool-player-assignments">
         <select class="team-mini-select" onchange="G.reconPool[${idx}].teamIdx=parseInt(this.value)<0?null:parseInt(this.value);renderReconTeamsOnly()">
@@ -1402,7 +1457,8 @@ function renderRecon() {
 
 function togglePoolTee(idx) {
   const p = G.reconPool[idx];
-  p.tee = p.tee === 'blue' ? 'white' : 'blue';
+  const cycle = {blue:'oaks', oaks:'white', white:'blue'};
+  p.tee = cycle[p.tee] || 'white';
   // Keep the source card in sync so a trip back to Review doesn't undo it
   if (p.cardIdx >= 0 && G.cards[p.cardIdx]?.foursome[p.playerIdx]) G.cards[p.cardIdx].foursome[p.playerIdx].tee = p.tee;
   renderRecon();
@@ -1460,7 +1516,7 @@ function confirmTeams() {
 // ═══════════════════════════════════════
 function setModalTee(btn) {
   document.querySelectorAll('#modal-tee .tee-btn').forEach(b => b.className = 'tee-btn');
-  btn.classList.add(btn.dataset.tee === 'blue' ? 'on-blue' : 'on-white');
+  btn.classList.add('on-' + btn.dataset.tee);
 }
 
 function openModal() {
@@ -1479,7 +1535,7 @@ function closeModal() { document.getElementById('add-modal').classList.add('hidd
 function confirmAddPlayer() {
   const name = document.getElementById('modal-name').value.trim();
   const hcp  = parseFloat(document.getElementById('modal-hcp').value)||0;
-  const tee  = document.querySelector('#modal-tee .tee-btn.on-blue') ? 'blue' : 'white';
+  const tee  = teeFromSeg(document.getElementById('modal-tee'));
   if (!name) { alert('Please enter a name.'); return; }
   G.reconPool.push({name, hcp, tee, cardIdx:-1, playerIdx:-1, teamIdx:G.modalTeam, wildcardTeamIdx:null, scores:Array(18).fill(null)});
   closeModal();
