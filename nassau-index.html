@@ -748,6 +748,34 @@ input::placeholder { color: rgba(242,246,252,0.35); }
 .review-group-label { font-size: 11px; }
 .empty-team { font-size: 11px; }
 .rh-sub { font-size: 11px; }
+
+/* — single-pane scoring (2026-08-22): one team per screen, tabs below — */
+.score-body { padding-bottom: 260px; }
+.step-btn { width: 54px; height: 54px; font-size: 26px; border-radius: 10px; }
+.step-num { width: 44px; font-size: 34px; }
+.player-score-row { grid-template-columns: 1fr 16px 156px 36px; padding: 12px 14px; }
+.psr-info .psr-name { font-size: 19px; }
+.psr-info .psr-hcp { font-size: 13px; }
+.net-label { font-size: 15px; }
+.tbh-name { font-size: 15px; }
+.tbh-score { font-size: 13px; }
+.tbh-score b { font-size: 17px; }
+.stroke-pip { font-size: 11px; }
+.nb-teams { display: flex; gap: 7px; margin-bottom: 8px; }
+.nbt-tab {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 10px 6px; border-radius: 10px; cursor: pointer;
+  background: rgba(255,255,255,0.06); border: 1.5px solid rgba(255,255,255,0.14);
+}
+.nbt-tab.on { border-color: var(--gold); background: rgba(200,168,75,0.14); }
+.nbt-name {
+  font-family: 'DM Mono', monospace; font-size: 12px; color: var(--parch-mid);
+  display: flex; align-items: center; gap: 6px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.nbt-tab.on .nbt-name { color: var(--parch); }
+.nbt-score { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 700; color: var(--gold); }
+.nb-cell { max-width: 220px; }
 </style>
 </head>
 <body>
@@ -921,6 +949,7 @@ input::placeholder { color: rgba(242,246,252,0.35); }
   <div class="score-body" id="score-body"></div>
   <div class="nassau-bar">
     <div class="nb-eyebrow" id="nb-eyebrow">Live Nassau · Live Oak</div>
+    <div class="nb-teams" id="nb-teams"></div>
     <div class="nb-matchups" id="nb-matchups"></div>
     <button class="btn-primary" id="btn-next-hole" onclick="nextOrDone()" style="padding:13px;">Next Hole →</button>
   </div>
@@ -1010,6 +1039,7 @@ let G = {
   reconPool:  [],      // all players from all cards [{...player,teamIdx}]
   scores:     [],      // [hi][ti][pi] — built for manual mode or from photos
   hole:       0,
+  viewTeam:   0,       // which team's pane is showing on the scoring screen
   modalTeam:  null,
 };
 
@@ -1770,7 +1800,9 @@ function renderHole() {
   const body=document.getElementById('score-body');
   body.innerHTML='';
 
-  G.teams.forEach((team,ti)=>{
+  // Single-pane: render only the selected team's card
+  if (G.viewTeam >= G.teams.length || G.viewTeam < 0) G.viewTeam = 0;
+  [[G.teams[G.viewTeam], G.viewTeam]].forEach(([team,ti])=>{
     const res=teamScore(ti,hi);
     const cm={};res.contribs.forEach(cc=>cm[cc.idx]=cc.role);
     const pd=res.total!==null?res.total-res.par:null;
@@ -1796,7 +1828,7 @@ function renderHole() {
       row.innerHTML=`
         <div class="psr-info">
           <div class="psr-name">${p.name}${role?`<span class="contrib-tag ${role}">${role}</span>`:''}</div>
-          <div class="psr-hcp">IDX ${p.hcp} · ${teeLabel(p)[0]} · CH ${ch}</div>
+          <div class="psr-hcp">${teeLabel(p)[0]} ${p.hcp} · CH ${ch}</div>
         </div>
         <div class="stroke-pip">${st>0?'●'.repeat(st):st<0?'+':''}</div>
         <div class="stepper">
@@ -1844,7 +1876,29 @@ function refreshTsum(ti,hi) {
   if(el) el.innerHTML=`Score: <b>${res.total??'—'}</b> <span style="font-size:8px;color:rgba(242,246,252,0.5);">/ ${res.par} (${ds})</span>`;
 }
 
+function switchTeamPane(ti) {
+  G.viewTeam = ti;
+  renderHole();
+}
+
+function renderTeamTabs() {
+  const wrap=document.getElementById('nb-teams');
+  if(!wrap) return;
+  wrap.innerHTML='';
+  G.teams.forEach((team,ti)=>{
+    const res=teamScore(ti,G.hole);
+    const tab=document.createElement('div');
+    tab.className='nbt-tab'+(ti===G.viewTeam?' on':'');
+    tab.onclick=()=>switchTeamPane(ti);
+    tab.innerHTML=`
+      <span class="nbt-name"><span class="team-chip" style="background:${team.color}"></span>${team.name}</span>
+      <span class="nbt-score">${res.total??'—'}</span>`;
+    wrap.appendChild(tab);
+  });
+}
+
 function updateNassauBar() {
+  renderTeamTabs();
   const{mu}=nassau();
   const cells=document.getElementById('nb-matchups');
   cells.innerHTML='';
