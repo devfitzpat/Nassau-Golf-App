@@ -225,7 +225,9 @@ body {
 /* ═══════════════════════════════════
    INPUTS
 ═══════════════════════════════════ */
-input[type=text], input[type=number] {
+/* :where() keeps this at zero specificity so class overrides
+   (.score-hole-input, .rpc-hcp-input) win as intended */
+:where(input[type=text], input[type=number]) {
   width: 100%;
   background: rgba(255,255,255,0.06);
   border: 1px solid rgba(255,255,255,0.1);
@@ -358,7 +360,7 @@ input::placeholder { color: rgba(240,235,224,0.2); }
 .rpc-name { font-size: 15px; font-weight: 600; }
 .rpc-hcp-wrap { display: flex; align-items: center; gap: 6px; }
 .rpc-hcp-label { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--parch-dim); }
-.rpc-hcp-input { width: 44px; padding: 4px 6px; font-size: 13px; text-align: center; border-radius: 6px; }
+.rpc-hcp-input { width: 56px; padding: 4px 6px; font-size: 13px; text-align: center; border-radius: 6px; }
 .scores-9 { display: grid; grid-template-columns: repeat(9, 1fr); gap: 3px; padding: 10px 10px 4px; }
 .scores-divider { text-align: center; font-family: 'DM Mono', monospace; font-size: 8px; color: rgba(240,235,224,0.25); padding: 2px 0; letter-spacing: 2px; }
 .score-hole-label { font-family: 'DM Mono', monospace; font-size: 7px; color: rgba(240,235,224,0.3); text-align: center; margin-bottom: 2px; }
