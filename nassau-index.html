@@ -1752,21 +1752,22 @@ function allHoles() {
 }
 
 function nassau() {
-  const holes=allHoles();
-  const mu=[];
-  for(let a=0;a<G.teams.length;a++)
-    for(let b=a+1;b<G.teams.length;b++){
-      let f=0,bk=0;
-      holes.forEach((h,hi)=>{
-        const ta=h.trs[a].total,tb=h.trs[b].total;
-        if(ta===null||tb===null) return;
-        const w=ta<tb?'a':ta>tb?'b':'t';
-        if(hi<9){if(w==='a')f++;else if(w==='b')f--;}
-        else    {if(w==='a')bk++;else if(w==='b')bk--;}
-      });
-      mu.push({a,b,front:f,back:bk,overall:f+bk});
-    }
-  return{holes,mu};
+  return{holes:allHoles()};
+}
+
+// ONE bet, all teams in. Per segment the team winning the most holes
+// outright collects $1 from every other team; any tie is a push.
+// (With two teams this is identical to a head-to-head Nassau.)
+function betSegments(holes) {
+  function seg(lo,hi){
+    const wins=G.teams.map(()=>0);
+    for(let i=lo;i<=hi;i++){const w=holes[i].winner; if(w!==null) wins[w]++;}
+    const max=Math.max(...wins);
+    const leaders=wins.map((w,i)=>w===max?i:-1).filter(i=>i>=0);
+    const sorted=[...wins].sort((x,y)=>y-x);
+    return {wins, winner: leaders.length===1?leaders[0]:null, margin: sorted[0]-(sorted[1]??0)};
+  }
+  return {front:seg(0,8), back:seg(9,17), overall:seg(0,17)};
 }
 
 function skins(holes) {
@@ -1899,24 +1900,18 @@ function renderTeamTabs() {
 
 function updateNassauBar() {
   renderTeamTabs();
-  const{mu}=nassau();
-  const cells=document.getElementById('nb-matchups');
-  cells.innerHTML='';
-  mu.forEach(m=>{
-    const tA=G.teams[m.a],tB=G.teams[m.b];
-    function ms(score){
-      if(score===0) return`<span class="nb-val tied">A/S</span>`;
-      const w=score>0?tA:tB;
-      return`<span class="nb-val" style="color:${w.color}">${w.name} +${Math.abs(score)}</span>`;
-    }
-    const cell=document.createElement('div');
-    cell.className='nb-cell';
-    cell.innerHTML=`
-      <div class="nb-label">${tA.name} v ${tB.name}</div>
-      <div class="nb-scores-row">F: ${ms(m.front)} · B: ${ms(m.back)}</div>
-    `;
-    cells.appendChild(cell);
-  });
+  const{holes}=nassau();
+  const B=betSegments(holes);
+  function ms(s){
+    if(s.winner===null) return`<span class="nb-val tied">A/S</span>`;
+    const t=G.teams[s.winner];
+    return`<span class="nb-val" style="color:${t.color}">${t.name} +${s.margin}</span>`;
+  }
+  document.getElementById('nb-matchups').innerHTML=`
+    <div class="nb-cell" style="max-width:none;flex:1;">
+      <div class="nb-label">The Bet · holes won</div>
+      <div class="nb-scores-row">F: ${ms(B.front)} · B: ${ms(B.back)} · O: ${ms(B.overall)}</div>
+    </div>`;
 }
 
 function prevHole(){if(G.hole>0){G.hole--;renderHole();}}
@@ -1930,19 +1925,20 @@ function nextOrDone(){
 // ═══════════════════════════════════════
 function showResults() {
   const c=course();
-  const{holes,mu}=nassau();
+  const{holes}=nassau();
+  const B=betSegments(holes);
   const sk=G.skinsType!=='none'?skins(holes):[];
+  const SEGS=[['Front 9',B.front],['Back 9',B.back],['Overall',B.overall]];
 
   document.getElementById('results-eyebrow').textContent=`Round Complete · ${c.name}`;
   document.getElementById('results-sub').textContent=`Fair Oaks Ranch · ${c.name}`;
 
-  // Payouts
+  // Payouts — one all-in bet per segment: winner collects $1 from each team
   const net=G.teams.map(()=>0);
-  mu.forEach(m=>{
-    [[m.front,1],[m.back,1],[m.overall,1]].forEach(([sc,amt])=>{
-      if(sc>0){net[m.a]+=amt;net[m.b]-=amt;}
-      else if(sc<0){net[m.b]+=amt;net[m.a]-=amt;}
-    });
+  SEGS.forEach(([label,s])=>{
+    if(s.winner===null) return;
+    net[s.winner]+=G.teams.length-1;
+    G.teams.forEach((_,i)=>{if(i!==s.winner)net[i]-=1;});
   });
   sk.forEach(s=>{
     net[s.ti]+=s.pot*(G.teams.length-1);
@@ -1959,18 +1955,16 @@ function showResults() {
     const tc=document.getElementById('tab-content');
 
     if(tab==='nassau'){
-      tc.innerHTML=mu.map(m=>{
-        const tA=G.teams[m.a],tB=G.teams[m.b];
-        function betRow(label,score){
-          const cls=score===0?'push':score>0?'win':'lose';
-          const txt=score===0?'Push':score>0?`${tA.name} wins $1`:`${tB.name} wins $1`;
-          return`<div class="pc-row"><span class="label">${label}</span><span class="val ${cls}">${txt}</span></div>`;
-        }
-        return`<div class="payout-card" style="margin-bottom:10px;">
-          <div class="pc-header"><span class="team-chip" style="background:${tA.color}"></span>${tA.name} vs <span class="team-chip" style="background:${tB.color}"></span>${tB.name}</div>
-          ${betRow('Front 9',m.front)}${betRow('Back 9',m.back)}${betRow('Overall',m.overall)}
-        </div>`;
-      }).join('');
+      const per=G.teams.length-1;
+      tc.innerHTML=`<div class="payout-card">
+        <div class="pc-header">The Bet · $1 each${G.teams.length>2?' · winner collects from all':''}</div>
+        ${SEGS.map(([label,s])=>{
+          const detail=G.teams.map((t,i)=>`${t.name.replace('Team ','T')} ${s.wins[i]}`).join(' · ');
+          const txt=s.winner===null?'Push':`${G.teams[s.winner].name} wins $${per}`;
+          const cls=s.winner===null?'push':'win';
+          return`<div class="pc-row"><span class="label">${label}&nbsp;<span style="font-size:11px;opacity:.65;">${detail}</span></span><span class="val ${cls}">${txt}</span></div>`;
+        }).join('')}
+      </div>`;
     }
 
     if(tab==='skins'){
@@ -2015,7 +2009,7 @@ function showResults() {
       ${G.teams.map((t,i)=>`
         <div class="pc-row">
           <span class="label"><span class="team-chip" style="background:${t.color}"></span>${t.name}</span>
-          <span class="val ${net[i]>0?'win':net[i]<0?'lose':'push'}">${net[i]>=0?'+':''}$${net[i].toFixed(2)}</span>
+          <span class="val ${net[i]>0?'win':net[i]<0?'lose':'push'}">${net[i]<0?'−':'+'}$${Math.abs(net[i]).toFixed(2)}</span>
         </div>`).join('')}
     </div>
     <div class="tab-row">
