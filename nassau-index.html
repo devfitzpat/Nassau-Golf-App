@@ -2,13 +2,17 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Nassau">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1b2b46">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
 <title>Nassau</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 
@@ -33,6 +37,8 @@
   --r: 14px;
   --safe-top: env(safe-area-inset-top, 44px);
   --safe-bot: env(safe-area-inset-bottom, 34px);
+  --safe-l: env(safe-area-inset-left, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
 }
 
 /* ═══════════════════════════════════
@@ -70,6 +76,8 @@ body {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   padding: 20px 18px calc(32px + var(--safe-bot));
+  padding-left: max(18px, var(--safe-l));
+  padding-right: max(18px, var(--safe-r));
 }
 
 /* ═══════════════════════════════════
@@ -77,6 +85,8 @@ body {
 ═══════════════════════════════════ */
 .app-header {
   padding: calc(var(--safe-top) + 14px) 22px 18px;
+  padding-left: max(22px, var(--safe-l));
+  padding-right: max(22px, var(--safe-r));
   background: linear-gradient(180deg, var(--ink) 0%, var(--ink-mid) 100%);
   border-bottom: 1px solid rgba(200,168,75,0.2);
   position: relative; flex-shrink: 0;
@@ -363,7 +373,7 @@ input::placeholder { color: rgba(242,246,252,0.2); }
 .rpc-name { font-size: 15px; font-weight: 600; }
 .rpc-hcp-wrap { display: flex; align-items: center; gap: 6px; }
 .rpc-hcp-label { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--parch-dim); }
-.rpc-hcp-input { width: 56px; padding: 4px 6px; font-size: 13px; text-align: center; border-radius: 6px; }
+.rpc-hcp-input { width: 56px; padding: 4px 6px; font-size: 16px; text-align: center; border-radius: 6px; }
 .scores-9 { display: grid; grid-template-columns: repeat(9, 1fr); gap: 3px; padding: 10px 10px 4px; }
 .scores-divider { text-align: center; font-family: 'DM Mono', monospace; font-size: 8px; color: rgba(242,246,252,0.5); padding: 2px 0; letter-spacing: 2px; }
 .score-hole-label { font-family: 'DM Mono', monospace; font-size: 7px; color: rgba(242,246,252,0.3); text-align: center; margin-bottom: 2px; }
@@ -439,6 +449,8 @@ input::placeholder { color: rgba(242,246,252,0.2); }
 ═══════════════════════════════════ */
 .scoring-header {
   padding: calc(var(--safe-top) + 10px) 18px 14px;
+  padding-left: max(18px, var(--safe-l));
+  padding-right: max(18px, var(--safe-r));
   background: var(--ink);
   border-bottom: 1px solid rgba(200,168,75,0.18);
   flex-shrink: 0;
@@ -467,7 +479,7 @@ input::placeholder { color: rgba(242,246,252,0.2); }
 .prog-dot.done .prog-dot-bar { background: var(--gold); }
 .prog-dot.now .prog-dot-bar { background: var(--sage); }
 
-.score-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 14px 16px 170px; }
+.score-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 14px 16px 170px; padding-left: max(16px, var(--safe-l)); padding-right: max(16px, var(--safe-r)); }
 
 /* TEAM BLOCK */
 .team-block { margin-bottom: 12px; border-radius: var(--r); overflow: hidden; border: 1px solid rgba(255,255,255,0.12); }
@@ -478,6 +490,7 @@ input::placeholder { color: rgba(242,246,252,0.2); }
 .tbh-name { font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 500; display: flex; align-items: center; gap: 6px; }
 .tbh-score { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--parch-dim); }
 .tbh-score b { color: var(--gold); font-size: 11px; }
+.tbh-par { font-size: 12px; color: rgba(242,246,252,0.65); }
 
 .player-score-row {
   display: grid; grid-template-columns: 1fr 16px 86px 28px;
@@ -527,6 +540,8 @@ input::placeholder { color: rgba(242,246,252,0.2); }
   background: linear-gradient(180deg, rgba(27,43,70,0.96) 0%, var(--ink) 100%);
   border-top: 1px solid rgba(200,168,75,0.35);
   padding: 10px 16px calc(12px + var(--safe-bot));
+  padding-left: max(16px, var(--safe-l));
+  padding-right: max(16px, var(--safe-r));
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
 }
@@ -738,7 +753,7 @@ input::placeholder { color: rgba(242,246,252,0.35); }
 .seg-btn { font-size: 15px; }
 .fp-value { font-size: 15px; }
 .hdr-sub { font-size: 13px; }
-.team-mini-select, .wildcard-select { font-size: 13px; }
+.team-mini-select, .wildcard-select { font-size: 16px; }
 .sc-player-line { font-size: 13px; }
 .ud-sub { font-size: 14px; }
 .pc-row { font-size: 16px; }
@@ -789,7 +804,7 @@ input::placeholder { color: rgba(242,246,252,0.35); }
 .bsg-team { font-size: 15px; font-weight: 500; display: flex; align-items: center; gap: 7px; padding: 7px 0; }
 .bsg-val { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 700; text-align: center; }
 .bsg-par { display: block; font-family: 'DM Mono', monospace; font-size: 9px; color: var(--parch-dim); font-weight: 400; }
-.board-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 12px 14px; }
+.board-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 12px 14px; padding-left: max(14px, var(--safe-l)); padding-right: max(14px, var(--safe-r)); }
 .board-grid { display: grid; gap: 3px; }
 .bd-head, .bd-cell, .bd-name { height: 34px; display: flex; align-items: center; justify-content: center; border-radius: 6px; }
 .bd-head { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--parch-dim); }
@@ -1020,6 +1035,8 @@ input::placeholder { color: rgba(242,246,252,0.35); }
 </div>
 
 <script>
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+
 // ═══════════════════════════════════════
 // WORKER URL — paste yours here after setup
 // ═══════════════════════════════════════
@@ -1054,7 +1071,7 @@ const COURSES = {
   }
 };
 
-const TC = ['#68d391','#63b3ed','#f6ad55','#fc8181','#b794f4'];
+const TC = ['#4fd1c5','#63b3ed','#f6ad55','#fc8181','#b794f4'];
 
 // ═══════════════════════════════════════
 // STATE
@@ -1903,6 +1920,15 @@ function setModalTee(btn) {
   btn.classList.add('on-' + btn.dataset.tee);
 }
 
+let modalVVHandler = null;
+function positionModalSheet() {
+  const vv = window.visualViewport;
+  const sheet = document.querySelector('#add-modal .modal-sheet');
+  if (!vv || !sheet) return;
+  const overlap = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+  sheet.style.transform = overlap ? `translateY(-${overlap}px)` : '';
+}
+
 function openModal() {
   G.modalTeam = null;
   document.getElementById('modal-name').value = '';
@@ -1914,8 +1940,21 @@ function openModal() {
       <span class="team-chip" style="background:${t.color}"></span>${esc(t.name)}
     </button>`).join('');
   document.getElementById('add-modal').classList.remove('hidden');
+  if (window.visualViewport) {
+    modalVVHandler = positionModalSheet;
+    window.visualViewport.addEventListener('resize', modalVVHandler);
+    positionModalSheet();
+  }
 }
-function closeModal() { document.getElementById('add-modal').classList.add('hidden'); }
+function closeModal() {
+  document.getElementById('add-modal').classList.add('hidden');
+  if (window.visualViewport && modalVVHandler) {
+    window.visualViewport.removeEventListener('resize', modalVVHandler);
+    modalVVHandler = null;
+  }
+  const sheet = document.querySelector('#add-modal .modal-sheet');
+  if (sheet) sheet.style.transform = '';
+}
 function confirmAddPlayer() {
   const name = document.getElementById('modal-name').value.trim();
   const hcp  = clampHcp(document.getElementById('modal-hcp').value);
@@ -2221,7 +2260,7 @@ function renderHole() {
         <div class="tbh-name"><span class="team-chip" style="background:${team.color}"></span>${esc(team.name)}</div>
         <div style="display:flex;align-items:center;gap:8px;">
           <button class="btn-ghost" style="width:auto;margin:0;padding:5px 9px;font-size:8px;" onclick="fillPar(${ti},${hi})">Fill par</button>
-          <div class="tbh-score" id="tsum-${ti}">Score: <b>${res.total??'—'}</b> <span style="font-size:8px;color:rgba(242,246,252,0.5);">/ ${res.par} (${ds})</span></div>
+          <div class="tbh-score" id="tsum-${ti}">Score: <b>${res.total??'—'}</b> <span class="tbh-par">/ ${res.par} (${ds})</span></div>
         </div>
       </div>
     `;
@@ -2307,7 +2346,7 @@ function refreshTsum(ti,hi) {
   const pd=res.total!==null?res.total-res.par:null;
   const ds=pd!==null?(pd===0?'E':pd>0?`+${pd}`:`${pd}`):'—';
   const el=document.getElementById(`tsum-${ti}`);
-  if(el) el.innerHTML=`Score: <b>${res.total??'—'}</b> <span style="font-size:8px;color:rgba(242,246,252,0.5);">/ ${res.par} (${ds})</span>`;
+  if(el) el.innerHTML=`Score: <b>${res.total??'—'}</b> <span class="tbh-par">/ ${res.par} (${ds})</span>`;
   const cm={}; res.contribs.forEach(cc=>cm[cc.idx]=cc.role);
   G.teams[ti].players.forEach((p,pi)=>{
     const tagEl=document.getElementById(`ct-${ti}-${pi}`);
