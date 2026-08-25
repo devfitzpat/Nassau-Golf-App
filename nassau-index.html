@@ -1000,7 +1000,7 @@ input::placeholder { color: rgba(242,246,252,0.35); }
     <div class="modal-title">Add Player</div>
     <div class="modal-2col">
       <div><div class="field-label">Name</div><input type="text" id="modal-name" placeholder="Player name"></div>
-      <div><div class="field-label">GHIN</div><input type="number" id="modal-hcp" placeholder="0" min="0" max="54" step="0.1"></div>
+      <div><div class="field-label">GHIN</div><input type="number" id="modal-hcp" placeholder="0" min="-10" max="54" step="0.1" onchange="clampModalHcp(this)"></div>
     </div>
     <div class="field-label" style="margin-bottom:6px;">Tee</div>
     <div class="tee-seg" id="modal-tee" style="margin-bottom:12px;">
@@ -1123,11 +1123,12 @@ function updateFP() {
   const sk = G.skinsType === 'none' ? 'No skins' : `${cap(G.skinsType)} skins ($1/skin)`;
   const netPart   = G.netCount   > 0 ? `${G.netCount} Net`   : null;
   const grossPart = G.grossCount > 0 ? `${G.grossCount} Gross` : null;
-  const scorePart = [netPart, grossPart].filter(Boolean).join(' + ') || 'Gross only (no scores selected)';
+  const scorePart = [netPart, grossPart].filter(Boolean).join(' + ') || 'No scoring balls selected — choose at least 1';
   document.getElementById('fp-text').textContent = `${scorePart} per hole · ${sk}`;
 }
 
 function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+function esc(s){ return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 // ═══════════════════════════════════════
 // MANUAL TEAMS
@@ -1168,8 +1169,8 @@ function addManualPlayer(ti, name='', hcp='', tee='white') {
       <input type="text" placeholder="Name" value="${name}"
         onchange="G.teams[${ti}].players[${pi}].name=this.value.trim()"></div>
     <div><div class="field-label">GHIN</div>
-      <input type="number" placeholder="0" value="${hcp}" min="0" max="54" step="0.1"
-        onchange="G.teams[${ti}].players[${pi}].hcp=parseFloat(this.value)||0"></div>
+      <input type="number" placeholder="0" value="${hcp}" min="-10" max="54" step="0.1"
+        onchange="clampManualHcp(this,${ti},${pi})"></div>
     <div><div class="field-label">Tee</div>
       <div class="tee-seg">
         <button class="tee-btn${tee==='blue'?' on-blue':''}" data-tee="blue" onclick="setRowTee(this,${ti},${pi})">B</button>
@@ -1210,6 +1211,8 @@ function begin() {
   G.grossCount = parseInt(document.querySelector('#seg-gross .seg-btn.on').dataset.v);
   G.skinsType  = document.querySelector('#seg-skins .seg-btn.on').dataset.v;
 
+  if (G.netCount + G.grossCount === 0) { alert('Choose at least 1 net or gross ball.'); return; }
+
   if (G.mode === 'photo') {
     G.cards = [];
     document.getElementById('upload-list').innerHTML = '';
@@ -1231,6 +1234,9 @@ function begin() {
     });
     if (G.teams.length < 2) { alert('Add at least 2 teams.'); return; }
     if (G.teams.some(t=>t.players.length<1)) { alert('Each team needs at least 1 player.'); return; }
+    const needed = G.netCount + G.grossCount;
+    const shortTeams = G.teams.filter(t=>t.players.length>0 && t.players.length<needed);
+    if (shortTeams.length && !confirm(`${shortTeams.map(t=>t.name).join(', ')} ${shortTeams.length>1?'have':'has'} fewer players than the ${needed}-ball format needs — ${shortTeams.length>1?'their':'its'} holes won't count. Continue?`)) return;
     if (anyScoresEntered(G.scores)) {
       // Coming back mid-round (e.g. switched course) — keep what's entered
       reshapeScores();
@@ -1316,12 +1322,13 @@ Rules:
     const parsed = JSON.parse(match[0]);
 
     const ci = G.cards.findIndex(c=>c.id===cardId);
-    G.cards[ci].foursome = parsed.players.map(p=>({
-      name: p.name||'Unknown',
-      hcp:  parseFloat(p.hcp)||0,
-      tee:  'white',
-      scores: Array.isArray(p.scores) ? p.scores.slice(0,18).map(s=>s!=null?parseInt(s)||null:null) : Array(18).fill(null)
-    }));
+    G.cards[ci].foursome = parsed.players.map(p=>{
+      const rawHcp = String(p.hcp??'').trim();
+      const hcp = clampHcp(parseFloat(rawHcp.replace(/^\+/,'-')) || 0);
+      const scores = Array.isArray(p.scores) ? p.scores.slice(0,18).map(s=>s!=null?parseInt(s)||null:null) : Array(18).fill(null);
+      while (scores.length < 18) scores.push(null);
+      return { name: p.name||'Unknown', hcp, tee:'white', scores };
+    });
     G.cards[ci].status = 'done';
 
     document.getElementById(`cstatus-${cardId}`).className = 'sc-status done';
@@ -1373,8 +1380,8 @@ function goToReview() {
             onblur="G.cards[${ci}].foursome[${pi}].name=this.textContent.trim()">${player.name}</div>
           <div class="rpc-hcp-wrap">
             <span class="rpc-hcp-label">GHIN</span>
-            <input class="rpc-hcp-input" type="number" value="${player.hcp}" min="0" max="54" step="0.1"
-              onchange="G.cards[${ci}].foursome[${pi}].hcp=parseFloat(this.value)||0;updateRpcCh(${ci},${pi})">
+            <input class="rpc-hcp-input" type="number" value="${player.hcp}" min="-10" max="54" step="0.1"
+              onchange="clampReviewHcp(this,${ci},${pi})">
             <div class="tee-seg">
               <button class="tee-btn${player.tee==='blue'?' on-blue':''}" data-tee="blue" onclick="setCardTee(this,${ci},${pi})">B</button>
               <button class="tee-btn${player.tee==='oaks'?' on-oaks':''}" data-tee="oaks" onclick="setCardTee(this,${ci},${pi})">O</button>
@@ -1388,7 +1395,7 @@ function goToReview() {
             <div>
               <div class="score-hole-label">${hi+1}</div>
               <input class="score-hole-input" type="number" value="${s??''}" min="1" max="15" placeholder="—"
-                onchange="G.cards[${ci}].foursome[${pi}].scores[${hi}]=parseInt(this.value)||null">
+                onchange="clampScoreInput(this,${ci},${pi},${hi})">
             </div>`).join('')}
         </div>
         <div class="scores-divider">· · · · · · · · ·</div>
@@ -1397,7 +1404,7 @@ function goToReview() {
             <div>
               <div class="score-hole-label">${hi+10}</div>
               <input class="score-hole-input" type="number" value="${s??''}" min="1" max="15" placeholder="—"
-                onchange="G.cards[${ci}].foursome[${pi}].scores[${hi+9}]=parseInt(this.value)||null">
+                onchange="clampScoreInput(this,${ci},${pi},${hi+9})">
             </div>`).join('')}
         </div>
       `;
@@ -1593,6 +1600,14 @@ function renderReconTeamsOnly() {
 }
 
 function confirmTeams() {
+  // Unassigned players can't silently vanish from the bet
+  const unassigned = G.reconPool.filter(p=>p.teamIdx===null||p.teamIdx<0);
+  const blockingWc = unassigned.find(p=>p.wildcardTeamIdx!==null);
+  if (blockingWc) { alert(blockingWc.name + ' is set as a wildcard but has no primary team — assign one first.'); return; }
+  if (unassigned.length) {
+    if (!confirm(`${unassigned.map(p=>p.name).join(', ')} won't count (unassigned). Continue?`)) return;
+  }
+
   // Build teams with players and scores
   G.teams.forEach(t => t.players=[]);
   G.reconPool.forEach(p => {
@@ -1608,11 +1623,18 @@ function confirmTeams() {
     if (!confirm(`${empty.map(t=>t.name).join(', ')} have no players. Continue?`)) return;
   }
 
+  const needed = G.netCount + G.grossCount;
+  const shortTeams = G.teams.filter(t=>t.players.length>0 && t.players.length<needed);
+  if (shortTeams.length && !confirm(`${shortTeams.map(t=>t.name).join(', ')} ${shortTeams.length>1?'have':'has'} fewer players than the ${needed}-ball format needs — ${shortTeams.length>1?'their':'its'} holes won't count. Continue?`)) return;
+
   // Build scores array
   const c = course();
   G.scores = c.holes.map((_,hi) =>
     G.teams.map(t => t.players.map(p => p.scores[hi]??null))
   );
+
+  const warnings = settlementWarnings();
+  if (warnings.length && !confirm(warnings.join('\n') + '\n\nSettle anyway? Undecided holes count for no one.')) return;
 
   showResults();
 }
@@ -1640,7 +1662,7 @@ function openModal() {
 function closeModal() { document.getElementById('add-modal').classList.add('hidden'); }
 function confirmAddPlayer() {
   const name = document.getElementById('modal-name').value.trim();
-  const hcp  = parseFloat(document.getElementById('modal-hcp').value)||0;
+  const hcp  = clampHcp(document.getElementById('modal-hcp').value);
   const tee  = teeFromSeg(document.getElementById('modal-tee'));
   if (!name) { alert('Please enter a name.'); return; }
   G.reconPool.push({name, hcp, tee, cardIdx:-1, playerIdx:-1, teamIdx:G.modalTeam, wildcardTeamIdx:null, scores:Array(18).fill(null)});
@@ -1676,6 +1698,34 @@ function anyScoresEntered(scores) {
 // p.hcp = GHIN handicap index; p.tee = 'blue' | 'white'
 // Course Handicap = Index × (Slope ÷ 113) + (Rating − Par)
 // ═══════════════════════════════════════
+function clampHcp(raw) {
+  let v = parseFloat(raw);
+  if (!Number.isFinite(v)) v = 0;
+  return Math.max(-10, Math.min(54, v));
+}
+function clampManualHcp(el, ti, pi) {
+  const v = clampHcp(el.value);
+  el.value = v;
+  G.teams[ti].players[pi].hcp = v;
+  saveState();
+}
+function clampReviewHcp(el, ci, pi) {
+  const v = clampHcp(el.value);
+  el.value = v;
+  G.cards[ci].foursome[pi].hcp = v;
+  updateRpcCh(ci, pi);
+  saveState();
+}
+function clampModalHcp(el) {
+  el.value = clampHcp(el.value);
+}
+function clampScoreInput(el, ci, pi, hi) {
+  let v = parseInt(el.value);
+  if (!Number.isFinite(v) || v < 1 || v > 15) v = null;
+  G.cards[ci].foursome[pi].scores[hi] = v;
+  el.value = v == null ? '' : v;
+}
+
 function courseHcp(p) {
   const c = course();
   const tee = c.tees[p.tee] || c.tees.white;
@@ -1757,7 +1807,7 @@ function teamScore(ti, hi) {
     }
     return{total:best,contribs:bc};
   }
-  if(cands.length<needed) return{...bestAssign(cands),par:tPar};
+  if(cands.length<needed) return{total:null,par:tPar,contribs:[],short:true};
   let best=Infinity,bc=[];
   for(const grp of combos(cands,needed)){
     const{total,contribs}=bestAssign(grp);
@@ -1770,11 +1820,16 @@ function allHoles() {
   const c = course();
   return c.holes.map((_,hi)=>{
     const trs=G.teams.map((_,ti)=>teamScore(ti,hi));
-    const vals=trs.map(r=>r.total).filter(v=>v!==null);
-    if(!vals.length) return{trs,winner:null,tie:false,min:null};
-    const min=Math.min(...vals);
-    const ws=trs.map((r,i)=>r.total===min?i:-1).filter(i=>i>=0);
-    return{trs,winner:ws.length===1?ws[0]:null,tie:ws.length>1,min};
+    const elig=G.teams.map((t,ti)=>t.players.length>0?ti:-1).filter(i=>i>=0);
+    const allHaveTotal = elig.length>0 && elig.every(i=>trs[i].total!==null);
+    if (allHaveTotal) {
+      const vals=elig.map(i=>trs[i].total);
+      const min=Math.min(...vals);
+      const ws=elig.filter(i=>trs[i].total===min);
+      return{trs,winner:ws.length===1?ws[0]:null,tie:ws.length>1,min};
+    }
+    const incomplete = elig.some(i=>trs[i].total!==null);
+    return{trs,winner:null,tie:false,min:null,incomplete};
   });
 }
 
@@ -1797,13 +1852,86 @@ function betSegments(holes) {
   return {front:seg(0,8), back:seg(9,17), overall:seg(0,17)};
 }
 
-function skins(holes) {
-  let pot=0,sk=[];
-  holes.forEach((h,hi)=>{
+// Real skins: best single ball per eligible team, gross or net per skinsType.
+// Independent of the Nassau best-ball winner — a skin can land on a hole
+// a team didn't win the Nassau hole on.
+function skins(holes, skinsType) {
+  const c = course();
+  let pot=0, sk=[];
+  c.holes.forEach((hole,hi)=>{
     pot++;
-    if(h.winner!==null&&!h.tie){sk.push({hole:hi+1,ti:h.winner,pot});pot=0;}
+    const elig = G.teams.map((t,ti)=>t.players.length>0?ti:-1).filter(i=>i>=0);
+    const bestByTeam = {};
+    let anyMissing = false;
+    elig.forEach(ti=>{
+      const balls = [];
+      G.teams[ti].players.forEach((p,pi)=>{
+        const raw = G.scores[hi][ti][pi];
+        if (raw==null) return;
+        const st = strokesOn(courseHcp(p), hole.hcp);
+        balls.push(skinsType==='gross' ? raw : raw-st);
+      });
+      G.teams.forEach((ot,oti)=>{
+        if (oti===ti) return;
+        ot.players.forEach((p,pi)=>{
+          if (p.wildcardTeamIdx !== ti) return;
+          const raw = G.scores[hi][oti][pi];
+          if (raw==null) return;
+          const st = strokesOn(courseHcp(p), hole.hcp);
+          balls.push(skinsType==='gross' ? raw : raw-st);
+        });
+      });
+      if (balls.length) bestByTeam[ti] = Math.min(...balls);
+      else anyMissing = true;
+    });
+    if (elig.length && !anyMissing) {
+      const vals = elig.map(ti=>bestByTeam[ti]);
+      const min = Math.min(...vals);
+      const winners = elig.filter(ti=>bestByTeam[ti]===min);
+      if (winners.length===1) { sk.push({hole:hi+1, ti:winners[0], pot}); pot=0; }
+    }
   });
   return sk;
+}
+
+// Pre-settlement completeness gate — call before computing money.
+function settlementWarnings() {
+  const holes = allHoles();
+  const warnings = [];
+  const noScoreHoles = [];
+  let anyHoleScored = false;
+
+  holes.forEach((h,hi)=>{
+    const missing = [];
+    let anyTotal = false, eligCount = 0;
+    G.teams.forEach((t,ti)=>{
+      if (t.players.length===0) return;
+      eligCount++;
+      const total = h.trs[ti].total;
+      if (total===null) missing.push(t); else anyTotal=true;
+      if (h.trs[ti].short) warnings.push(`Hole ${hi+1}: ${esc(t.name)} short-handed (fewer balls than the format needs)`);
+    });
+    if (anyTotal) anyHoleScored = true;
+    if (anyTotal && missing.length) {
+      warnings.push(`Hole ${hi+1}: no score for ${missing.map(t=>esc(t.name)).join(', ')}`);
+    } else if (!anyTotal && eligCount) {
+      noScoreHoles.push(hi+1);
+    }
+  });
+
+  if (anyHoleScored && noScoreHoles.length) {
+    const ranges=[]; let start=noScoreHoles[0], prev=start;
+    for (let i=1;i<noScoreHoles.length;i++) {
+      const n=noScoreHoles[i];
+      if (n===prev+1) { prev=n; continue; }
+      ranges.push(start===prev?`${start}`:`${start}–${prev}`);
+      start=prev=n;
+    }
+    ranges.push(start===prev?`${start}`:`${start}–${prev}`);
+    warnings.push(`Holes ${ranges.join(', ')} have no scores and won't count.`);
+  }
+
+  return warnings;
 }
 
 // ═══════════════════════════════════════
@@ -1850,12 +1978,12 @@ function renderHole() {
       const st=strokesOn(ch,hole.hcp);
       const sc=G.scores[hi][ti][pi];
       const net=sc!==null?sc-st:null;
-      const role=cm[pi];
+      const role=cm['t'+ti+'p'+pi];
       const row=document.createElement('div');
       row.className='player-score-row'+(st!==0?' stroker':'');
       row.innerHTML=`
         <div class="psr-info">
-          <div class="psr-name">${p.name}${role?`<span class="contrib-tag ${role}">${role}</span>`:''}</div>
+          <div class="psr-name">${p.name}<span id="ct-${ti}-${pi}">${role?`<span class="contrib-tag ${role}">${role}</span>`:''}</span></div>
           <div class="psr-hcp">${teeLabel(p)[0]} ${p.hcp} · CH ${ch}</div>
         </div>
         <div class="stroke-pip">${st>0?'●'.repeat(st):st<0?'+':''}</div>
@@ -1902,6 +2030,13 @@ function refreshTsum(ti,hi) {
   const ds=pd!==null?(pd===0?'E':pd>0?`+${pd}`:`${pd}`):'—';
   const el=document.getElementById(`tsum-${ti}`);
   if(el) el.innerHTML=`Score: <b>${res.total??'—'}</b> <span style="font-size:8px;color:rgba(242,246,252,0.5);">/ ${res.par} (${ds})</span>`;
+  const cm={}; res.contribs.forEach(cc=>cm[cc.idx]=cc.role);
+  G.teams[ti].players.forEach((p,pi)=>{
+    const tagEl=document.getElementById(`ct-${ti}-${pi}`);
+    if(!tagEl) return;
+    const role=cm['t'+ti+'p'+pi];
+    tagEl.innerHTML = role?`<span class="contrib-tag ${role}">${role}</span>`:'';
+  });
 }
 
 function switchTeamPane(ti) {
@@ -1955,7 +2090,7 @@ function renderBetView() {
   const{holes}=nassau();
   const B=betSegments(holes);
   const needed=G.netCount+G.grossCount;
-  const sk=G.skinsType!=='none'?skins(holes):[];
+  const sk=G.skinsType!=='none'?skins(holes, G.skinsType):[];
   const skMap={}; sk.forEach(s=>skMap[s.hole-1]=s);
 
   document.getElementById('bet-eyebrow').textContent=`The Bet · ${c.name}`;
@@ -1976,7 +2111,7 @@ function renderBetView() {
   const scoreRows=G.teams.map((t,ti)=>{
     const f=segTotal(ti,0,8), b=segTotal(ti,9,17), o=segTotal(ti,0,17);
     return`
-      <div class="bsg-team"><span class="team-chip" style="background:${t.color}"></span>${t.name}</div>
+      <div class="bsg-team"><span class="team-chip" style="background:${t.color}"></span>${esc(t.name)}</div>
       <div class="bsg-val">${f.txt}<span class="bsg-par">${f.par}</span></div>
       <div class="bsg-val">${b.txt}<span class="bsg-par">${b.par}</span></div>
       <div class="bsg-val" style="color:var(--gold)">${o.txt}<span class="bsg-par">${o.par}</span></div>`;
@@ -1986,8 +2121,8 @@ function renderBetView() {
   const per=G.teams.length-1;
   const SEGS=[['Front 9',B.front],['Back 9',B.back],['Overall',B.overall]];
   const betRows=SEGS.map(([label,s])=>{
-    const detail=G.teams.map((t,i)=>`${t.name.replace('Team ','T')} ${s.wins[i]}`).join(' · ');
-    const txt=s.winner===null?'Push':`${G.teams[s.winner].name} wins $${per}`;
+    const detail=G.teams.map((t,i)=>`${esc(t.name.replace('Team ','T'))} ${s.wins[i]}`).join(' · ');
+    const txt=s.winner===null?'Push':`${esc(G.teams[s.winner].name)} wins $${per}`;
     const cls=s.winner===null?'push':'win';
     return`<div class="pc-row"><span class="label">${label}&nbsp;<span style="font-size:11px;opacity:.65;">${detail}</span></span><span class="val ${cls}">${txt}</span></div>`;
   }).join('');
@@ -1998,12 +2133,15 @@ function renderBetView() {
   grid+=`<div class="bd-head" style="position:sticky;left:0;z-index:2;background:var(--ink-mid);">HOLE</div>`;
   c.holes.forEach((h,hi)=>{ grid+=`<div class="bd-head${holes[hi].tie?' tied':''}">${h.h}</div>`; });
   G.teams.forEach((t,ti)=>{
-    grid+=`<div class="bd-name"><span class="team-chip" style="background:${t.color}"></span>${t.name.replace('Team ','T')}</div>`;
+    grid+=`<div class="bd-name"><span class="team-chip" style="background:${t.color}"></span>${esc(t.name.replace('Team ','T'))}</div>`;
     c.holes.forEach((h,hi)=>{
       const hres=holes[hi];
+      const skinHere = skMap[hi]&&skMap[hi].ti===ti;
       if(hres.winner===ti){
-        const pot=skMap[hi]&&skMap[hi].ti===ti&&skMap[hi].pot>1?'$'+skMap[hi].pot:'●';
+        const pot=skinHere&&skMap[hi].pot>1?'$'+skMap[hi].pot:'●';
         grid+=`<div class="bd-cell" style="background:${t.color};color:var(--ink);">${pot}</div>`;
+      } else if (skinHere) {
+        grid+=`<div class="bd-cell" style="border:2px solid var(--gold);color:var(--gold);font-weight:700;">$${skMap[hi].pot}</div>`;
       } else {
         grid+=`<div class="bd-cell">${hres.tie?'·':''}</div>`;
       }
@@ -2024,7 +2162,7 @@ function renderBetView() {
     <div class="sec-label">Hole by Hole</div>
     <div class="payout-card">
       <div class="board-scroll">${grid}</div>
-      <div class="board-hint">● hole won · &middot; tied · ${G.skinsType!=='none'?'$N = skin with carried pot · ':''}rotate the phone for the full 18</div>
+      <div class="board-hint">● hole won · &middot; tied · ${G.skinsType!=='none'?'$N = skin (best ball) · ':''}rotate the phone for the full 18</div>
     </div>
     <div style="height:14px;"></div>
     <button class="btn-primary" onclick="go(G.betReturn||'scr-scoring')">← Back</button>`;
@@ -2033,7 +2171,11 @@ function renderBetView() {
 function prevHole(){if(G.hole>0){G.hole--;renderHole();}}
 function nextOrDone(){
   if(G.hole<17){G.hole++;renderHole();}
-  else showResults();
+  else {
+    const warnings = settlementWarnings();
+    if (warnings.length && !confirm(warnings.join('\n') + '\n\nSettle anyway? Undecided holes count for no one.')) return;
+    showResults();
+  }
 }
 
 // ═══════════════════════════════════════
@@ -2043,7 +2185,7 @@ function showResults() {
   const c=course();
   const{holes}=nassau();
   const B=betSegments(holes);
-  const sk=G.skinsType!=='none'?skins(holes):[];
+  const sk=G.skinsType!=='none'?skins(holes, G.skinsType):[];
   const SEGS=[['Front 9',B.front],['Back 9',B.back],['Overall',B.overall]];
 
   document.getElementById('results-eyebrow').textContent=`Round Complete · ${c.name}`;
@@ -2062,7 +2204,16 @@ function showResults() {
   });
 
   const maxNet=Math.max(...net);
-  const winIdx=net.indexOf(maxNet);
+  const leaders=G.teams.map((_,i)=>i).filter(i=>net[i]===maxNet);
+  const allSquare=net.every(n=>n===0);
+  let heroLabel, heroName, heroColor;
+  if (allSquare) {
+    heroLabel='All Square'; heroName='No money moves'; heroColor='var(--gold)';
+  } else if (leaders.length>1) {
+    heroLabel='Overall Winner'; heroName=leaders.map(i=>esc(G.teams[i].name)).join(' & '); heroColor='var(--gold)';
+  } else {
+    heroLabel='Overall Winner'; heroName=esc(G.teams[leaders[0]].name); heroColor=G.teams[leaders[0]].color;
+  }
 
   let activeTab='nassau';
   function renderTab(tab) {
@@ -2075,8 +2226,8 @@ function showResults() {
       tc.innerHTML=`<div class="payout-card">
         <div class="pc-header">The Bet · $1 each${G.teams.length>2?' · winner collects from all':''}</div>
         ${SEGS.map(([label,s])=>{
-          const detail=G.teams.map((t,i)=>`${t.name.replace('Team ','T')} ${s.wins[i]}`).join(' · ');
-          const txt=s.winner===null?'Push':`${G.teams[s.winner].name} wins $${per}`;
+          const detail=G.teams.map((t,i)=>`${esc(t.name.replace('Team ','T'))} ${s.wins[i]}`).join(' · ');
+          const txt=s.winner===null?'Push':`${esc(G.teams[s.winner].name)} wins $${per}`;
           const cls=s.winner===null?'push':'win';
           return`<div class="pc-row"><span class="label">${label}&nbsp;<span style="font-size:11px;opacity:.65;">${detail}</span></span><span class="val ${cls}">${txt}</span></div>`;
         }).join('')}
@@ -2090,18 +2241,18 @@ function showResults() {
           ?'<div class="pc-row"><span class="label">No skins won — all holes tied</span></div>'
           :sk.map(s=>`<div class="pc-row">
             <span class="label">Hole ${s.hole}${s.pot>1?` (${s.pot} carried)`:''}</span>
-            <span class="val win" style="color:${G.teams[s.ti].color}">${G.teams[s.ti].name} +$${s.pot}</span>
+            <span class="val win" style="color:${G.teams[s.ti].color}">${esc(G.teams[s.ti].name)} +$${s.pot}</span>
           </div>`).join('')}
       </div>`;
     }
 
     if(tab==='holes'){
-      const heads=G.teams.map(t=>`<th>${t.name.replace('Team ','T')}</th>`).join('');
+      const heads=G.teams.map(t=>`<th>${esc(t.name.replace('Team ','T'))}</th>`).join('');
       const rows=holes.map((h,hi)=>{
         const hole=c.holes[hi];
         const tds=h.trs.map(r=>`<td class="${r.total===h.min&&!h.tie?'ht-win':''}">${r.total??'—'}</td>`).join('');
         const wc=h.winner!==null
-          ?`<td class="ht-win" style="color:${G.teams[h.winner].color}">${G.teams[h.winner].name.replace('Team ','T')}</td>`
+          ?`<td class="ht-win" style="color:${G.teams[h.winner].color}">${esc(G.teams[h.winner].name.replace('Team ','T'))}</td>`
           :`<td class="${h.tie?'ht-tie':''}">${h.tie?'TIE':'—'}</td>`;
         return`<tr><td>${hole.h}</td><td>${hole.par}</td>${tds}${wc}</tr>`;
       }).join('');
@@ -2116,15 +2267,15 @@ function showResults() {
   const body=document.getElementById('results-body');
   body.innerHTML=`
     <div class="results-hero">
-      <div class="rh-label">Overall Winner</div>
-      <div class="rh-winner" style="color:${G.teams[winIdx].color}">${G.teams[winIdx].name}</div>
+      <div class="rh-label">${heroLabel}</div>
+      <div class="rh-winner" style="color:${heroColor}">${heroName}</div>
       <div class="rh-sub">${c.name} · ${G.netCount}N + ${G.grossCount}G format</div>
     </div>
     <div class="payout-card" style="margin-bottom:14px;">
       <div class="pc-header">Final Payouts</div>
       ${G.teams.map((t,i)=>`
         <div class="pc-row">
-          <span class="label"><span class="team-chip" style="background:${t.color}"></span>${t.name}</span>
+          <span class="label"><span class="team-chip" style="background:${t.color}"></span>${esc(t.name)}</span>
           <span class="val ${net[i]>0?'win':net[i]<0?'lose':'push'}">${net[i]<0?'−':'+'}$${Math.abs(net[i]).toFixed(2)}</span>
         </div>`).join('')}
     </div>
