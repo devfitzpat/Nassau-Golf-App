@@ -257,6 +257,9 @@ input::placeholder { color: rgba(242,246,252,0.2); }
   display: flex; align-items: center; gap: 8px;
 }
 .player-row { display: grid; grid-template-columns: 1fr 58px 62px 32px; gap: 7px; align-items: flex-end; margin-bottom: 8px; }
+.player-row-wrap { margin-bottom: 10px; }
+.player-row-wrap .player-row { margin-bottom: 6px; }
+.player-row-wrap .wildcard-select { width: 100%; }
 
 /* ═══════════════════════════════════
    BUTTONS
@@ -388,6 +391,7 @@ input::placeholder { color: rgba(242,246,252,0.2); }
   font-size: 18px; font-weight: 700; color: var(--parch);
   width: 140px; padding: 0;
 }
+.rpc-name-input { font-family: 'DM Sans', sans-serif; font-size: 17px; font-weight: 600; width: 160px; }
 .rtc-count { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--parch-dim); }
 .rtc-players { display: flex; flex-wrap: wrap; gap: 6px; min-height: 28px; }
 .player-chip {
@@ -458,9 +462,10 @@ input::placeholder { color: rgba(242,246,252,0.2); }
 .hole-meta { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--parch-dim); letter-spacing: 1px; margin-top: 3px; }
 .hole-format { font-family: 'DM Mono', monospace; font-size: 8px; color: rgba(200,168,75,0.6); letter-spacing: 0.5px; margin-top: 2px; }
 .progress-track { display: flex; gap: 2px; margin-top: 10px; }
-.prog-dot { flex: 1; height: 2px; border-radius: 2px; background: rgba(255,255,255,0.12); transition: background 0.3s; }
-.prog-dot.done { background: var(--gold); }
-.prog-dot.now { background: var(--sage); }
+.prog-dot { flex: 1; height: 16px; display: flex; align-items: center; cursor: pointer; }
+.prog-dot-bar { width: 100%; height: 2px; border-radius: 2px; background: rgba(255,255,255,0.12); transition: background 0.3s; }
+.prog-dot.done .prog-dot-bar { background: var(--gold); }
+.prog-dot.now .prog-dot-bar { background: var(--sage); }
 
 .score-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 14px 16px 170px; }
 
@@ -503,6 +508,7 @@ input::placeholder { color: rgba(242,246,252,0.2); }
 .step-num.bogey { color: var(--parch); }
 .step-num.double { color: #fc8181; }
 .step-num.worse { color: var(--red-soft); }
+.step-num.cleared { color: rgba(242,246,252,0.3); }
 .net-label { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--gold); text-align: center; }
 
 .contrib-tag {
@@ -884,6 +890,7 @@ input::placeholder { color: rgba(242,246,252,0.35); }
 
     <div style="height:18px;"></div>
     <button class="btn-primary" id="begin-btn" onclick="begin()">Upload Scorecards →</button>
+    <button class="btn-ghost" id="btn-last-round" style="display:none;" onclick="viewLastRound()">View Last Round →</button>
   </div>
 </div>
 
@@ -924,10 +931,7 @@ input::placeholder { color: rgba(242,246,252,0.35); }
     <p class="hdr-sub">Tap any score to correct it · Names and HCs are editable</p>
   </div>
   <div class="scroll-body" id="review-body">
-    <!-- rendered dynamically -->
-    <button class="btn-primary" onclick="goToReconcile()" style="margin-top:8px;">Assign Teams →</button>
-    <div style="height:10px;"></div>
-    <button class="btn-secondary" onclick="go('scr-upload')">← Back</button>
+    <!-- rendered dynamically by goToReview() -->
   </div>
 </div>
 
@@ -1127,17 +1131,31 @@ function updateFP() {
   document.getElementById('fp-text').textContent = `${scorePart} per hole · ${sk}`;
 }
 
+// Moves the setup screen's net/gross/skins seg controls to match G —
+// used on resume/restore so the setup screen reflects the real round
+// instead of page-load defaults.
+function syncSegs() {
+  const map = {net:G.netCount, gross:G.grossCount, skins:G.skinsType};
+  Object.keys(map).forEach(k => {
+    const wrap = document.getElementById(`seg-${k}`);
+    if (!wrap) return;
+    wrap.querySelectorAll('.seg-btn').forEach(b => b.classList.toggle('on', String(b.dataset.v) === String(map[k])));
+  });
+  updateFP();
+}
+
 function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 function esc(s){ return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 // ═══════════════════════════════════════
 // MANUAL TEAMS
 // ═══════════════════════════════════════
-function addManualTeam(defaults) {
+function addManualTeam(team) {
   const idx = G.teams.length;
   if (idx >= 5) return;
   const color = TC[idx];
-  G.teams.push({name:`Team ${idx+1}`, color, players:[]});
+  const name = (team && team.name) || `Team ${idx+1}`;
+  G.teams.push({name, color, players:[]});
   const wrap = document.getElementById('manual-teams');
   const card = document.createElement('div');
   card.className = 'team-card'; card.id = `mt-${idx}`;
@@ -1145,9 +1163,9 @@ function addManualTeam(defaults) {
     <div class="team-card-header">
       <div class="team-card-title">
         <span class="team-chip" style="background:${color}"></span>
-        <input type="text" value="Team ${idx+1}"
+        <input type="text" value="${esc(name)}"
           style="background:transparent;border:none;outline:none;font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:700;color:var(--parch);width:130px;"
-          onchange="G.teams[${idx}].name=this.value">
+          onchange="G.teams[${idx}].name=this.value;renderAllManualPlayers();saveState()">
       </div>
       ${idx>=2?`<button class="btn-icon-danger" onclick="removeManualTeam(${idx})">×</button>`:''}
     </div>
@@ -1155,37 +1173,97 @@ function addManualTeam(defaults) {
     <button class="btn-ghost" style="margin-top:4px;" onclick="addManualPlayer(${idx})">+ Add Player</button>
   `;
   wrap.appendChild(card);
-  (defaults||[{name:'',hcp:0},{name:'',hcp:0}]).forEach(p => addManualPlayer(idx, p.name, p.hcp, p.tee||'white'));
+  const players = (team && team.players) || [{name:'',hcp:0,tee:'white'},{name:'',hcp:0,tee:'white'}];
+  players.forEach(p => addManualPlayer(idx, p.name, p.hcp, p.tee||'white', p.wildcardTeamIdx ?? null));
+  renderAllManualPlayers();
 }
 
-function addManualPlayer(ti, name='', hcp='', tee='white') {
-  const pi = G.teams[ti].players.length;
-  G.teams[ti].players.push({name:'', hcp:0, tee, scores:Array(18).fill(null)});
+// Renders every row of team ti's roster from G.teams[ti].players — state
+// drives the DOM, not the other way around. A row's inputs locate their
+// own index at event time (manualRowIndex), so removing a non-last row
+// never leaves a later row's handlers pointing at a stale index.
+function renderManualPlayers(ti) {
   const wrap = document.getElementById(`mt-${ti}-players`);
-  const row = document.createElement('div');
-  row.className = 'player-row';
-  row.innerHTML = `
-    <div><div class="field-label">Name</div>
-      <input type="text" placeholder="Name" value="${name}"
-        onchange="G.teams[${ti}].players[${pi}].name=this.value.trim()"></div>
-    <div><div class="field-label">GHIN</div>
-      <input type="number" placeholder="0" value="${hcp}" min="-10" max="54" step="0.1"
-        onchange="clampManualHcp(this,${ti},${pi})"></div>
-    <div><div class="field-label">Tee</div>
-      <div class="tee-seg">
-        <button class="tee-btn${tee==='blue'?' on-blue':''}" data-tee="blue" onclick="setRowTee(this,${ti},${pi})">B</button>
-        <button class="tee-btn${tee==='oaks'?' on-oaks':''}" data-tee="oaks" onclick="setRowTee(this,${ti},${pi})">O</button>
-        <button class="tee-btn${tee==='white'?' on-white':''}" data-tee="white" onclick="setRowTee(this,${ti},${pi})">W</button>
-      </div></div>
-    <button class="btn-icon-danger" onclick="this.closest('.player-row').remove();G.teams[${ti}].players.splice(${pi},1)">×</button>
-  `;
-  wrap.appendChild(row);
+  if (!wrap || !G.teams[ti]) return;
+  wrap.innerHTML = '';
+  G.teams[ti].players.forEach(p => {
+    const wcOptions = G.teams.map((t,oti)=> oti===ti ? '' :
+      `<option value="${oti}" ${p.wildcardTeamIdx===oti?'selected':''}>Also counts for: ${esc(t.name)}</option>`).join('');
+    const row = document.createElement('div');
+    row.className = 'player-row-wrap';
+    row.innerHTML = `
+      <div class="player-row">
+        <div><div class="field-label">Name</div>
+          <input type="text" placeholder="Name" value="${esc(p.name)}"
+            onchange="updateManualPlayerField(this,${ti},'name')"></div>
+        <div><div class="field-label">GHIN</div>
+          <input type="number" placeholder="0" value="${p.hcp}" min="-10" max="54" step="0.1"
+            onchange="updateManualPlayerField(this,${ti},'hcp')"></div>
+        <div><div class="field-label">Tee</div>
+          <div class="tee-seg">
+            <button class="tee-btn${p.tee==='blue'?' on-blue':''}" data-tee="blue" onclick="setRowTee(this,${ti})">B</button>
+            <button class="tee-btn${p.tee==='oaks'?' on-oaks':''}" data-tee="oaks" onclick="setRowTee(this,${ti})">O</button>
+            <button class="tee-btn${p.tee==='white'?' on-white':''}" data-tee="white" onclick="setRowTee(this,${ti})">W</button>
+          </div></div>
+        <button class="btn-icon-danger" onclick="removeManualPlayer(this,${ti})">×</button>
+      </div>
+      <select class="wildcard-select" onchange="updateManualPlayerWildcard(this,${ti})">
+        <option value="-1">— no wildcard —</option>
+        ${wcOptions}
+      </select>
+    `;
+    wrap.appendChild(row);
+  });
 }
 
-function setRowTee(btn, ti, pi) {
-  if (G.teams[ti] && G.teams[ti].players[pi]) G.teams[ti].players[pi].tee = btn.dataset.tee;
+function renderAllManualPlayers() { G.teams.forEach((t,ti)=>renderManualPlayers(ti)); }
+
+function manualRowIndex(el) {
+  const row = el.closest('.player-row-wrap');
+  return [...row.parentElement.children].indexOf(row);
+}
+
+// No saveState() here deliberately — this runs during page-init roster
+// seeding (before the resume check has read any existing save) as well
+// as at runtime, where the field's own onchange (or the global 'change'
+// listener) persists the very next edit.
+function addManualPlayer(ti, name='', hcp='', tee='white', wildcardTeamIdx=null) {
+  G.teams[ti].players.push({name:(name||'').trim(), hcp:clampHcp(hcp===''?0:hcp), tee, wildcardTeamIdx: wildcardTeamIdx??null, scores:Array(18).fill(null)});
+  renderManualPlayers(ti);
+}
+
+function updateManualPlayerField(el, ti, field) {
+  const pi = manualRowIndex(el);
+  const p = G.teams[ti]?.players[pi];
+  if (!p) return;
+  if (field === 'name') p.name = el.value.trim();
+  if (field === 'hcp') { const v = clampHcp(el.value); el.value = v; p.hcp = v; }
+  saveState();
+}
+
+function setRowTee(btn, ti) {
+  const pi = manualRowIndex(btn);
+  const p = G.teams[ti]?.players[pi];
+  if (!p) return;
+  p.tee = btn.dataset.tee;
   btn.parentElement.querySelectorAll('.tee-btn').forEach(b => b.className = 'tee-btn');
   btn.classList.add('on-' + btn.dataset.tee);
+  saveState();
+}
+
+function updateManualPlayerWildcard(el, ti) {
+  const pi = manualRowIndex(el);
+  const p = G.teams[ti]?.players[pi];
+  if (!p) return;
+  const v = parseInt(el.value);
+  p.wildcardTeamIdx = (Number.isFinite(v) && v>=0 && v!==ti) ? v : null;
+  saveState();
+}
+
+function removeManualPlayer(btn, ti) {
+  const pi = manualRowIndex(btn);
+  G.teams[ti].players.splice(pi,1);
+  renderManualPlayers(ti);
   saveState();
 }
 
@@ -1196,10 +1274,48 @@ function teeFromSeg(container) {
 
 function removeManualTeam(idx) {
   if (G.teams.length <= 2) return;
-  const tmp = G.teams.map(t=>({...t,players:[...t.players]}));
-  tmp.splice(idx,1); G.teams=[];
+  const tmp = G.teams.map(t=>({...t,players:t.players.map(p=>({...p}))}));
+  tmp.splice(idx,1);
+  tmp.forEach(t=>t.players.forEach(p=>{
+    if (p.wildcardTeamIdx===idx) p.wildcardTeamIdx=null;
+    else if (p.wildcardTeamIdx>idx) p.wildcardTeamIdx--;
+  }));
+  G.teams=[];
   document.getElementById('manual-teams').innerHTML='';
-  tmp.forEach(t=>addManualTeam(t.players));
+  tmp.forEach(t=>addManualTeam(t));
+  saveState();
+}
+
+// Rebuilds the manual-teams DOM from the CURRENT G.teams (a resume, or
+// backing out to setup mid-round) — as opposed to seedManualTeams(),
+// which seeds G.teams fresh from the saved roster or hardcoded defaults.
+function rebuildManualTeamsDOM() {
+  const tms = G.teams.map(t => ({...t, players: t.players.map(p=>({...p}))}));
+  G.teams = [];
+  document.getElementById('manual-teams').innerHTML = '';
+  tms.forEach(t => addManualTeam(t));
+}
+
+const ROSTER_KEY = 'nassau-roster-v1';
+
+function saveRoster() {
+  try {
+    localStorage.setItem(ROSTER_KEY, JSON.stringify({teams: G.teams.map(t=>({
+      name: t.name,
+      players: t.players.map(p=>({name:p.name, hcp:p.hcp, tee:p.tee, wildcardTeamIdx:p.wildcardTeamIdx ?? null}))
+    }))}));
+  } catch(e) {}
+}
+
+function seedManualTeams() {
+  let roster = null;
+  try { roster = JSON.parse(localStorage.getItem(ROSTER_KEY)); } catch(e) {}
+  if (roster && Array.isArray(roster.teams) && roster.teams.length >= 2) {
+    roster.teams.forEach(t => addManualTeam(t));
+  } else {
+    addManualTeam({players:[{name:'Devin',hcp:8,tee:'white'},{name:'Pat',hcp:2,tee:'white'},{name:'Paul',hcp:8,tee:'white'},{name:'Rob',hcp:8,tee:'white'}]});
+    addManualTeam({players:[{name:'Craig',hcp:8,tee:'white'},{name:'Greg',hcp:2,tee:'white'},{name:'Steve',hcp:13,tee:'white'},{name:'John',hcp:4,tee:'white'}]});
+  }
 }
 
 // ═══════════════════════════════════════
@@ -1214,22 +1330,30 @@ function begin() {
   if (G.netCount + G.grossCount === 0) { alert('Choose at least 1 net or gross ball.'); return; }
 
   if (G.mode === 'photo') {
-    G.cards = [];
-    document.getElementById('upload-list').innerHTML = '';
-    document.getElementById('btn-to-review').disabled = true;
     document.getElementById('upload-badge').textContent = `${course().name} · Photo Upload`;
+    if (G.cards.length > 0) {
+      // Cards already uploaded (e.g. came back from tweaking a setting) — keep them.
+      renderUploadList();
+    } else {
+      document.getElementById('upload-list').innerHTML = '';
+      document.getElementById('btn-to-review').disabled = true;
+    }
     go('scr-upload');
   } else {
-    // Read manual players from DOM
+    // Consistency pass: the DOM should already agree with G.teams (every
+    // edit writes state as it happens) — this just re-reads it as a final check.
     G.teams.forEach((t,ti) => {
-      const rows = document.querySelectorAll(`#mt-${ti}-players .player-row`);
+      const rowWraps = document.querySelectorAll(`#mt-${ti}-players .player-row-wrap`);
       t.players = [];
-      rows.forEach(r => {
+      rowWraps.forEach(rw => {
+        const r = rw.querySelector('.player-row');
         const name = r.querySelector('input[type=text]')?.value.trim();
         if (!name) return;
-        const hcp = parseFloat(r.querySelector('input[type=number]')?.value)||0;
+        const hcp = clampHcp(r.querySelector('input[type=number]')?.value);
         const tee = teeFromSeg(r);
-        t.players.push({name, hcp, tee, scores:Array(18).fill(null)});
+        const wcv = parseInt(rw.querySelector('.wildcard-select')?.value);
+        const wildcardTeamIdx = (Number.isFinite(wcv) && wcv>=0 && wcv!==ti) ? wcv : null;
+        t.players.push({name, hcp, tee, wildcardTeamIdx, scores:Array(18).fill(null)});
       });
     });
     if (G.teams.length < 2) { alert('Add at least 2 teams.'); return; }
@@ -1245,6 +1369,7 @@ function begin() {
     } else {
       initManualScoring();
     }
+    saveRoster();
     go('scr-scoring');
     renderHole();
   }
@@ -1266,20 +1391,49 @@ function onFileSelected(input) {
   input.value = '';
 }
 
-function addCardUI(id, dataUrl, filename) {
-  const idx = G.cards.length + 1;
-  G.cards.push({id, dataUrl, status:'reading', foursome:[]});
+function cardStatusMarkup(c) {
+  if (c.status === 'done')  return {cls:'done',  html:`✓ ${c.foursome.length} players`};
+  if (c.status === 'error') return {cls:'error', html:`⚠ ${esc(c.errorMsg||'Read error')}`};
+  return {cls:'reading', html:`<span class="spin"></span> Reading…`};
+}
+function cardPlayersHTML(c) {
+  return c.status === 'done' ? c.foursome.map(p=>`<div class="sc-player-line">${esc(p.name)} · HC ${p.hcp}</div>`).join('') : '';
+}
+// Single builder for a scorecard-card's DOM — used both when a card is
+// first added and when the upload list is rebuilt from state, so the two
+// paths can't drift apart.
+function buildCardDiv(c, idx) {
   const div = document.createElement('div');
-  div.className = 'scorecard-card'; div.id = `card-${id}`;
+  div.className = 'scorecard-card'; div.id = `card-${c.id}`;
+  const st = cardStatusMarkup(c);
   div.innerHTML = `
     <div class="sc-header">
       <span class="sc-title">Foursome ${idx}</span>
-      <span class="sc-status reading" id="cstatus-${id}"><span class="spin"></span> Reading…</span>
+      <span class="sc-status ${st.cls}" id="cstatus-${c.id}">${st.html}</span>
     </div>
-    <img src="${dataUrl}" class="sc-thumb" alt="Scorecard">
-    <div class="sc-players" id="cplayers-${id}"></div>
+    <img src="${c.dataUrl || CARD_PLACEHOLDER}" class="sc-thumb" alt="Scorecard">
+    <div class="sc-players" id="cplayers-${c.id}">${cardPlayersHTML(c)}</div>
   `;
-  document.getElementById('upload-list').appendChild(div);
+  return div;
+}
+
+function addCardUI(id, dataUrl, filename) {
+  const idx = G.cards.length + 1;
+  const c = {id, dataUrl, status:'reading', foursome:[], errorMsg:null};
+  G.cards.push(c);
+  document.getElementById('upload-list').appendChild(buildCardDiv(c, idx));
+}
+
+// Rebuilds the upload screen from G.cards — used on the Review→Upload
+// Back button and on resume, so neither destroys or hides uploaded cards.
+function renderUploadList() {
+  const list = document.getElementById('upload-list');
+  list.innerHTML = '';
+  G.cards.forEach((c,i) => {
+    if (c.status === 'reading') { c.status = 'error'; c.errorMsg = 'Interrupted — re-add this card'; }
+    list.appendChild(buildCardDiv(c, i+1));
+  });
+  checkUploadReady();
 }
 
 async function readCardWithAI(cardId, dataUrl, mimeType) {
@@ -1331,18 +1485,22 @@ Rules:
     });
     G.cards[ci].status = 'done';
 
-    document.getElementById(`cstatus-${cardId}`).className = 'sc-status done';
-    document.getElementById(`cstatus-${cardId}`).textContent = `✓ ${parsed.players.length} players`;
-    document.getElementById(`cplayers-${cardId}`).innerHTML =
-      parsed.players.map(p=>`<div class="sc-player-line">${p.name} · HC ${p.hcp}</div>`).join('');
+    const st = cardStatusMarkup(G.cards[ci]);
+    const statusEl = document.getElementById(`cstatus-${cardId}`);
+    if (statusEl) { statusEl.className = 'sc-status ' + st.cls; statusEl.innerHTML = st.html; }
+    const playersEl = document.getElementById(`cplayers-${cardId}`);
+    if (playersEl) playersEl.innerHTML = cardPlayersHTML(G.cards[ci]);
     saveState();
 
   } catch(err) {
     const ci = G.cards.findIndex(c=>c.id===cardId);
     G.cards[ci].status = 'error';
-    document.getElementById(`cstatus-${cardId}`).className = 'sc-status error';
-    document.getElementById(`cstatus-${cardId}`).textContent = '⚠ Read error';
+    G.cards[ci].errorMsg = err?.message || 'Read error';
+    const st = cardStatusMarkup(G.cards[ci]);
+    const statusEl = document.getElementById(`cstatus-${cardId}`);
+    if (statusEl) { statusEl.className = 'sc-status ' + st.cls; statusEl.innerHTML = st.html; }
     console.error(err);
+    saveState();
   }
 
   checkUploadReady();
@@ -1376,8 +1534,8 @@ function goToReview() {
 
       pc.innerHTML = `
         <div class="rpc-header">
-          <div class="rpc-name" contenteditable="true"
-            onblur="G.cards[${ci}].foursome[${pi}].name=this.textContent.trim()">${player.name}</div>
+          <input class="rtc-name-input rpc-name-input" type="text" value="${esc(player.name)}"
+            onchange="updateReviewName(this,${ci},${pi})">
           <div class="rpc-hcp-wrap">
             <span class="rpc-hcp-label">GHIN</span>
             <input class="rpc-hcp-input" type="number" value="${player.hcp}" min="-10" max="54" step="0.1"
@@ -1418,11 +1576,17 @@ function goToReview() {
   btnWrap.innerHTML = `
     <button class="btn-primary" onclick="goToReconcile()" style="margin-top:8px;">Assign Teams →</button>
     <div style="height:10px;"></div>
-    <button class="btn-secondary" onclick="go('scr-upload')">← Back</button>
+    <button class="btn-secondary" onclick="renderUploadList();go('scr-upload')">← Back</button>
   `;
   body.appendChild(btnWrap);
 
   go('scr-review');
+}
+
+function updateReviewName(el, ci, pi) {
+  const v = el.value.trim();
+  if (v) G.cards[ci].foursome[pi].name = v; else el.value = G.cards[ci].foursome[pi].name;
+  saveState();
 }
 
 function setCardTee(btn, ci, pi) {
@@ -1450,13 +1614,23 @@ function goToReconcile() {
     ];
   }
 
-  // Build pool from all cards
-  G.reconPool = [];
+  // Merge pool from cards: a player already assigned a team keeps that
+  // assignment (and wildcard), refreshed with whatever's now on the card.
+  // Walk-ons added via the modal (cardIdx -1) carry over untouched.
+  const prevByKey = {};
+  G.reconPool.forEach(p => { if (p.cardIdx>=0) prevByKey[`${p.cardIdx}-${p.playerIdx}`] = p; });
+  const walkOns = G.reconPool.filter(p => p.cardIdx === -1);
+
+  const merged = [];
   G.cards.forEach((card,ci) => {
     card.foursome.forEach((p,pi) => {
-      G.reconPool.push({...p, cardIdx:ci, playerIdx:pi, teamIdx:null, wildcardTeamIdx:null});
+      const prev = prevByKey[`${ci}-${pi}`];
+      merged.push(prev
+        ? {...prev, name:p.name, hcp:p.hcp, tee:p.tee, scores:p.scores}
+        : {...p, cardIdx:ci, playerIdx:pi, teamIdx:null, wildcardTeamIdx:null});
     });
   });
+  G.reconPool = [...merged, ...walkOns];
 
   renderRecon();
   go('scr-reconcile');
@@ -1545,6 +1719,12 @@ function renderRecon() {
 
   body.appendChild(poolDiv);
 
+  const wcHint = document.createElement('div');
+  wcHint.className = 'board-hint';
+  wcHint.style.padding = '0 0 12px';
+  wcHint.textContent = "A wildcard's ball also counts for the chosen second team.";
+  body.appendChild(wcHint);
+
   // Add manual player button
   const manBtn = document.createElement('button');
   manBtn.className = 'btn-ghost';
@@ -1564,7 +1744,7 @@ function renderRecon() {
   backBtn.className = 'btn-secondary';
   backBtn.style.marginTop = '10px';
   backBtn.textContent = '← Back';
-  backBtn.onclick = () => go('scr-review');
+  backBtn.onclick = () => goToReview();
   body.appendChild(backBtn);
 }
 
@@ -1636,6 +1816,7 @@ function confirmTeams() {
   const warnings = settlementWarnings();
   if (warnings.length && !confirm(warnings.join('\n') + '\n\nSettle anyway? Undecided holes count for no one.')) return;
 
+  saveRoster();
   showResults();
 }
 
@@ -1702,12 +1883,6 @@ function clampHcp(raw) {
   let v = parseFloat(raw);
   if (!Number.isFinite(v)) v = 0;
   return Math.max(-10, Math.min(54, v));
-}
-function clampManualHcp(el, ti, pi) {
-  const v = clampHcp(el.value);
-  el.value = v;
-  G.teams[ti].players[pi].hcp = v;
-  saveState();
 }
 function clampReviewHcp(el, ci, pi) {
   const v = clampHcp(el.value);
@@ -1947,7 +2122,7 @@ function renderHole() {
   document.getElementById('hole-meta').textContent=`Par ${hole.par} · HCP ${hole.hcp} · ${c.name}`;
   document.getElementById('hole-fmt').textContent=`Team par ${hole.par*total} · ${G.netCount}N + ${G.grossCount}G`;
   document.getElementById('prog-track').innerHTML=
-    c.holes.map((_,i)=>`<div class="prog-dot${i<hi?' done':i===hi?' now':''}"></div>`).join('');
+    c.holes.map((_,i)=>`<div class="prog-dot${i<hi?' done':i===hi?' now':''}" onclick="G.hole=${i};renderHole();"><span class="prog-dot-bar"></span></div>`).join('');
   document.getElementById('nav-prev').disabled=hi===0;
   const last=hi===17;
   const nb=document.getElementById('btn-next-hole');
@@ -1968,8 +2143,11 @@ function renderHole() {
     block.className='team-block';
     block.innerHTML=`
       <div class="team-block-hdr">
-        <div class="tbh-name"><span class="team-chip" style="background:${team.color}"></span>${team.name}</div>
-        <div class="tbh-score" id="tsum-${ti}">Score: <b>${res.total??'—'}</b> <span style="font-size:8px;color:rgba(242,246,252,0.5);">/ ${res.par} (${ds})</span></div>
+        <div class="tbh-name"><span class="team-chip" style="background:${team.color}"></span>${esc(team.name)}</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button class="btn-ghost" style="width:auto;margin:0;padding:5px 9px;font-size:8px;" onclick="fillPar(${ti},${hi})">Fill par</button>
+          <div class="tbh-score" id="tsum-${ti}">Score: <b>${res.total??'—'}</b> <span style="font-size:8px;color:rgba(242,246,252,0.5);">/ ${res.par} (${ds})</span></div>
+        </div>
       </div>
     `;
 
@@ -1983,13 +2161,13 @@ function renderHole() {
       row.className='player-score-row'+(st!==0?' stroker':'');
       row.innerHTML=`
         <div class="psr-info">
-          <div class="psr-name">${p.name}<span id="ct-${ti}-${pi}">${role?`<span class="contrib-tag ${role}">${role}</span>`:''}</span></div>
+          <div class="psr-name">${esc(p.name)}<span id="ct-${ti}-${pi}">${role?`<span class="contrib-tag ${role}">${role}</span>`:''}</span></div>
           <div class="psr-hcp">${teeLabel(p)[0]} ${p.hcp} · CH ${ch}</div>
         </div>
         <div class="stroke-pip">${st>0?'●'.repeat(st):st<0?'+':''}</div>
         <div class="stepper">
           <button class="step-btn" onclick="adj(${ti},${pi},-1,${hi})">−</button>
-          <div class="step-num ${sClass(sc,hole.par)}" id="sn-${ti}-${pi}">${sc??'—'}</div>
+          <div class="step-num ${sClass(sc,hole.par)}" id="sn-${ti}-${pi}" onclick="tapPar(${ti},${pi},${hi})">${sc??'—'}</div>
           <button class="step-btn" onclick="adj(${ti},${pi},1,${hi})">+</button>
         </div>
         <div class="net-label" id="nl-${ti}-${pi}">${net??''}</div>
@@ -2010,18 +2188,43 @@ function renderHole() {
   saveState();
 }
 
-function adj(ti,pi,delta,hi) {
+// Writes a hole score (or null, to clear it) to state and refreshes every
+// bit of DOM that depends on it. adj(), tapPar() and fillPar() all funnel
+// through here so the ticker/save/tag refresh can't drift between them.
+function setScore(ti,pi,hi,v) {
   const hole=course().holes[hi];
-  let v=(G.scores[hi][ti][pi]??hole.par)+delta;
-  v=Math.max(1,Math.min(15,v));
   G.scores[hi][ti][pi]=v;
-  const st=strokesOn(courseHcp(G.teams[ti].players[pi]),hole.hcp);
+  const st=v!=null?strokesOn(courseHcp(G.teams[ti].players[pi]),hole.hcp):null;
   const el=document.getElementById(`sn-${ti}-${pi}`);
-  el.textContent=v; el.className=`step-num ${sClass(v,hole.par)}`;
-  document.getElementById(`nl-${ti}-${pi}`).textContent=v-st;
+  el.textContent=v??'—';
+  el.className=['step-num',sClass(v,hole.par),v==null?'cleared':''].filter(Boolean).join(' ');
+  document.getElementById(`nl-${ti}-${pi}`).textContent=v!=null?v-st:'';
   refreshTsum(ti,hi);
   updateNassauBar();
   saveState();
+}
+
+function adj(ti,pi,delta,hi) {
+  const hole=course().holes[hi];
+  const cur=G.scores[hi][ti][pi];
+  if (delta<0 && cur===1) { setScore(ti,pi,hi,null); return; }
+  let v=(cur??hole.par)+delta;
+  v=Math.max(1,Math.min(15,v));
+  setScore(ti,pi,hi,v);
+}
+
+// One-tap par: tapping a blank score sets it to par outright; tapping an
+// already-entered score does nothing (use the steppers to change it).
+function tapPar(ti,pi,hi) {
+  if (G.scores[hi][ti][pi] != null) return;
+  setScore(ti,pi,hi,course().holes[hi].par);
+}
+
+function fillPar(ti,hi) {
+  const par=course().holes[hi].par;
+  G.teams[ti].players.forEach((p,pi)=>{
+    if (G.scores[hi][ti][pi] == null) setScore(ti,pi,hi,par);
+  });
 }
 
 function refreshTsum(ti,hi) {
@@ -2280,6 +2483,7 @@ function showResults() {
         </div>`).join('')}
     </div>
     <button class="btn-secondary" style="margin-bottom:12px;" onclick="showBet('scr-results')">Show the Bet — Full Board →</button>
+    <button class="btn-secondary" style="margin-bottom:12px;" onclick="editScoresFromResults()">← Edit Scores</button>
     <div class="tab-row">
       <button class="tab-btn on" data-t="nassau" onclick="switchTab('nassau')">Nassau</button>
       ${G.skinsType!=='none'?`<button class="tab-btn" data-t="skins" onclick="switchTab('skins')">Skins</button>`:''}
@@ -2294,10 +2498,44 @@ function showResults() {
   go('scr-results');
 }
 
+function editScoresFromResults() {
+  if (G.mode === 'manual') { go('scr-scoring'); renderHole(); }
+  else { goToReview(); }
+}
+
+const LAST_ROUND_KEY = 'nassau-last-round-v1';
+
 function newRound() {
+  if (!confirm('Start a new round? Current results will be archived as Last Round.')) return;
+  try {
+    localStorage.setItem(LAST_ROUND_KEY, JSON.stringify({t: Date.now(), G: {...G, cards: G.cards.map(c=>({...c, dataUrl:null})), modalTeam:null}}));
+  } catch(e) {}
   G.teams=[]; G.cards=[]; G.reconPool=[]; G.scores=[];
+  G.hole=0; G.viewTeam=0; G.betReturn=null;
   clearSavedRound();
+  document.getElementById('manual-teams').innerHTML = '';
+  seedManualTeams();
+  document.getElementById('upload-list').innerHTML = '';
+  document.getElementById('btn-to-review').disabled = true;
   go('scr-setup');
+  updateLastRoundBtn();
+}
+
+function updateLastRoundBtn() {
+  const btn = document.getElementById('btn-last-round');
+  if (!btn) return;
+  let has = false;
+  try { has = !!JSON.parse(localStorage.getItem(LAST_ROUND_KEY)); } catch(e) {}
+  btn.style.display = has ? 'flex' : 'none';
+}
+
+function viewLastRound() {
+  let snap;
+  try { snap = JSON.parse(localStorage.getItem(LAST_ROUND_KEY)); } catch(e) { return; }
+  if (!snap || !snap.G) return;
+  Object.assign(G, snap.G);
+  G.cards.forEach(c => { if (!c.dataUrl) c.dataUrl = CARD_PLACEHOLDER; });
+  showResults();
 }
 
 // ═══════════════════════════════════════
@@ -2315,9 +2553,8 @@ function go(id) {
 // INIT
 // ═══════════════════════════════════════
 updateFP();
-// Pre-populate 2 manual teams for convenience
-addManualTeam([{name:'Devin',hcp:8,tee:'white'},{name:'Pat',hcp:2,tee:'white'},{name:'Paul',hcp:8,tee:'white'},{name:'Rob',hcp:8,tee:'white'}]);
-addManualTeam([{name:'Craig',hcp:8,tee:'white'},{name:'Greg',hcp:2,tee:'white'},{name:'Steve',hcp:13,tee:'white'},{name:'John',hcp:4,tee:'white'}]);
+seedManualTeams();
+updateLastRoundBtn();
 
 // Any input/select edit anywhere in the app persists the round
 document.addEventListener('change', () => saveState());
@@ -2329,28 +2566,32 @@ document.addEventListener('change', () => saveState());
   let saved;
   try { saved = JSON.parse(localStorage.getItem(SAVE_KEY)); } catch(e) { return; }
   if (!saved || !saved.G) return;
-  const RESUMABLE = ['scr-scoring','scr-review','scr-reconcile','scr-results'];
+  const RESUMABLE = ['scr-scoring','scr-upload','scr-review','scr-reconcile','scr-results'];
   if (saved.phase === 'scr-bet') saved.phase = saved.G.betReturn || 'scr-scoring';
   const midSetup = !RESUMABLE.includes(saved.phase) && anyScoresEntered(saved.G.scores);
   if (!RESUMABLE.includes(saved.phase) && !midSetup) return;
   if (Date.now() - saved.t > 18*3600*1000) { clearSavedRound(); return; }
-  if (!confirm('Resume the round in progress?')) { clearSavedRound(); return; }
+  if (!confirm('Resume the round in progress?')) return;
   Object.assign(G, saved.G);
   G.cards.forEach(c => { if (!c.dataUrl) c.dataUrl = CARD_PLACEHOLDER; });
+
+  // The setup screen (course/format/mode/roster) always reflects the
+  // restored state — so backing out to it from any phase shows the real
+  // round, not page-load defaults.
+  selectCourse(G.courseId);
+  selectMode(G.mode || 'photo');
+  syncSegs();
+  if (G.mode === 'manual') rebuildManualTeamsDOM();
+
   if (midSetup) {
-    // Backed out to setup mid-round; rebuild the roster UI with the saved players
-    selectCourse(G.courseId);
-    selectMode(G.mode || 'manual');
-    if (G.mode === 'manual') {
-      const tms = G.teams.map(t => ({...t}));
-      G.teams = [];
-      document.getElementById('manual-teams').innerHTML = '';
-      tms.forEach(t => addManualTeam(t.players));
-    }
+    // Backed out to setup mid-round — already synced above.
   } else if (saved.phase === 'scr-scoring') {
     document.getElementById('nb-eyebrow').textContent = `Live Nassau · ${course().name}`;
     go('scr-scoring');
     renderHole();
+  } else if (saved.phase === 'scr-upload') {
+    renderUploadList();
+    go('scr-upload');
   } else if (saved.phase === 'scr-review') {
     goToReview();
   } else if (saved.phase === 'scr-reconcile') {
