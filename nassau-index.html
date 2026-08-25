@@ -909,7 +909,7 @@ input::placeholder { color: rgba(242,246,252,0.35); }
     </p>
     <div id="upload-list"></div>
     <div class="upload-drop">
-      <input type="file" accept="image/*" capture="environment" onchange="onFileSelected(this)">
+      <input type="file" accept="image/*" multiple onchange="onFileSelected(this)">
       <div class="ud-icon">📋</div>
       <div class="ud-title">Add Scorecard</div>
       <div class="ud-sub">Tap to photograph or choose from camera roll</div>
@@ -1378,17 +1378,60 @@ function begin() {
 // ═══════════════════════════════════════
 // PHOTO UPLOAD
 // ═══════════════════════════════════════
-function onFileSelected(input) {
-  if (!input.files[0]) return;
-  const file = input.files[0];
-  const id = Date.now();
-  const reader = new FileReader();
-  reader.onload = e => {
-    addCardUI(id, e.target.result, file.name);
-    readCardWithAI(id, e.target.result, file.type || 'image/jpeg');
-  };
-  reader.readAsDataURL(file);
+// Decodes any browser-supported format (incl. HEIC via canvas re-encode)
+// and downsamples to the API's effective resolution before it ever leaves
+// the phone — smaller uploads, no oversize rejections, less iOS memory
+// pressure from multi-MB data-URLs sitting in state.
+async function downscaleImage(file) {
+  let bitmap;
+  try {
+    bitmap = await createImageBitmap(file);
+  } catch (e) {
+    bitmap = await new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('decode failed')); };
+      img.src = url;
+    });
+  }
+  const w = bitmap.width, h = bitmap.height;
+  if (!w || !h) throw new Error('decode failed');
+  const scale = Math.min(1, 1568 / Math.max(w, h));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(w * scale);
+  canvas.height = Math.round(h * scale);
+  canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  if (bitmap.close) bitmap.close();
+  return canvas.toDataURL('image/jpeg', 0.8);
+}
+
+async function onFileSelected(input) {
+  const files = [...input.files];
   input.value = '';
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    const id = Date.now() + '-' + i;
+    addCardUI(id, null, file.name);
+    try {
+      const dataUrl = await downscaleImage(file);
+      const ci = G.cards.findIndex(c=>c.id===id);
+      if (ci < 0) continue;
+      G.cards[ci].dataUrl = dataUrl;
+      const img = document.querySelector(`#card-${id} .sc-thumb`);
+      if (img) img.src = dataUrl;
+      readCardWithAI(id, dataUrl);
+    } catch (err) {
+      const ci = G.cards.findIndex(c=>c.id===id);
+      if (ci < 0) continue;
+      G.cards[ci].status = 'error';
+      G.cards[ci].errorMsg = 'Unsupported image';
+      const st = cardStatusMarkup(G.cards[ci]);
+      const statusEl = document.getElementById(`cstatus-${id}`);
+      if (statusEl) { statusEl.className = 'sc-status ' + st.cls; statusEl.innerHTML = st.html; }
+      checkUploadReady();
+    }
+  }
 }
 
 function cardStatusMarkup(c) {
@@ -1409,12 +1452,40 @@ function buildCardDiv(c, idx) {
   div.innerHTML = `
     <div class="sc-header">
       <span class="sc-title">Foursome ${idx}</span>
-      <span class="sc-status ${st.cls}" id="cstatus-${c.id}">${st.html}</span>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="sc-status ${st.cls}" id="cstatus-${c.id}">${st.html}</span>
+        <button class="btn-icon-danger" style="width:26px;height:26px;font-size:13px;background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.18);color:var(--parch);" onclick="retryCard('${c.id}')" title="Retry">↻</button>
+        <button class="btn-icon-danger" style="width:26px;height:26px;font-size:15px;" onclick="deleteCard('${c.id}')" title="Delete">×</button>
+      </div>
     </div>
     <img src="${c.dataUrl || CARD_PLACEHOLDER}" class="sc-thumb" alt="Scorecard">
     <div class="sc-players" id="cplayers-${c.id}">${cardPlayersHTML(c)}</div>
   `;
   return div;
+}
+
+function deleteCard(id) {
+  const ci = G.cards.findIndex(c=>String(c.id)===String(id));
+  if (ci < 0) return;
+  G.cards.splice(ci,1);
+  renderUploadList();
+  saveState();
+}
+
+function retryCard(id) {
+  const ci = G.cards.findIndex(c=>String(c.id)===String(id));
+  if (ci < 0) return;
+  const c = G.cards[ci];
+  if (!c.dataUrl || c.dataUrl === CARD_PLACEHOLDER) {
+    alert('Photo not kept after reload — delete this card and re-add it.');
+    return;
+  }
+  c.status = 'reading';
+  c.errorMsg = null;
+  const st = cardStatusMarkup(c);
+  const statusEl = document.getElementById(`cstatus-${c.id}`);
+  if (statusEl) { statusEl.className = 'sc-status ' + st.cls; statusEl.innerHTML = st.html; }
+  readCardWithAI(c.id, c.dataUrl);
 }
 
 function addCardUI(id, dataUrl, filename) {
@@ -1436,54 +1507,50 @@ function renderUploadList() {
   checkUploadReady();
 }
 
-async function readCardWithAI(cardId, dataUrl, mimeType) {
+async function readCardWithAI(cardId, dataUrl) {
   const base64 = dataUrl.split(',')[1];
   const c = course();
-
-  const prompt = `You are reading a golf scorecard from ${c.name} at Fair Oaks Ranch, TX (Par ${c.holes.reduce((s,h)=>s+h.par,0)}).
-
-Extract every player on this scorecard. Return ONLY valid JSON, no other text, no markdown fences:
-{"players":[{"name":"Player Name","hcp":8,"scores":[4,3,5,4,4,5,3,4,5,5,4,3,4,4,4,3,5,4]}]}
-
-Rules:
-- scores is always an array of exactly 18 integers (holes 1-18 in order)
-- Use null for any illegible or missing score
-- hcp is the handicap number shown for the player (may be a decimal GHIN index like 8.4)
-- Include every player row you can find`;
+  const controller = new AbortController();
+  const timer = setTimeout(()=>controller.abort(), 60000);
 
   try {
     const res = await fetch(WORKER_URL, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
-        model:'claude-opus-5',
-        max_tokens:16000,
-        output_config:{effort:'low'},
-        messages:[{
-          role:'user',
-          content:[
-            {type:'image',source:{type:'base64',media_type:mimeType,data:base64}},
-            {type:'text',text:prompt}
-          ]
-        }]
-      })
+        imageBase64: base64,
+        courseName: c.name,
+        coursePar: c.holes.reduce((s,h)=>s+h.par,0)
+      }),
+      signal: controller.signal
     });
 
-    const data = await res.json();
+    const data = await res.json().catch(()=>null);
+    if (!res.ok || data?.error) {
+      const msg = typeof data?.error === 'string' ? data.error : data?.error?.message;
+      throw new Error(msg || ('HTTP ' + res.status));
+    }
+
     const text = (data.content||[]).find(b=>b.type==='text')?.text||'';
-    const match = text.match(/\{[\s\S]*\}/);
-    if (!match) throw new Error('No JSON in response');
-    const parsed = JSON.parse(match[0]);
+    let parsed;
+    try { parsed = JSON.parse(text); }
+    catch(e) {
+      const match = text.match(/\{[\s\S]*\}/);
+      if (!match) throw new Error('No JSON in response');
+      parsed = JSON.parse(match[0]);
+    }
 
     const ci = G.cards.findIndex(c=>c.id===cardId);
+    if (ci < 0) return;
     G.cards[ci].foursome = parsed.players.map(p=>{
       const rawHcp = String(p.hcp??'').trim();
       const hcp = clampHcp(parseFloat(rawHcp.replace(/^\+/,'-')) || 0);
       const scores = Array.isArray(p.scores) ? p.scores.slice(0,18).map(s=>s!=null?parseInt(s)||null:null) : Array(18).fill(null);
       while (scores.length < 18) scores.push(null);
-      return { name: p.name||'Unknown', hcp, tee:'white', scores };
+      return { name: String(p.name||'Unknown').replace(/[<>"']/g,''), hcp, tee:'white', scores };
     });
     G.cards[ci].status = 'done';
+    G.cards[ci].errorMsg = null;
 
     const st = cardStatusMarkup(G.cards[ci]);
     const statusEl = document.getElementById(`cstatus-${cardId}`);
@@ -1494,16 +1561,18 @@ Rules:
 
   } catch(err) {
     const ci = G.cards.findIndex(c=>c.id===cardId);
+    if (ci < 0) return;
     G.cards[ci].status = 'error';
-    G.cards[ci].errorMsg = err?.message || 'Read error';
+    G.cards[ci].errorMsg = err?.name === 'AbortError' ? 'Timed out — retry' : (err?.message || 'Read error');
     const st = cardStatusMarkup(G.cards[ci]);
     const statusEl = document.getElementById(`cstatus-${cardId}`);
     if (statusEl) { statusEl.className = 'sc-status ' + st.cls; statusEl.innerHTML = st.html; }
     console.error(err);
     saveState();
+  } finally {
+    clearTimeout(timer);
+    checkUploadReady();
   }
-
-  checkUploadReady();
 }
 
 function checkUploadReady() {
@@ -1515,6 +1584,12 @@ function checkUploadReady() {
 // REVIEW SCREEN
 // ═══════════════════════════════════════
 function goToReview() {
+  const bad = G.cards.map((c,i)=>({c,i})).filter(({c})=>c.status==='error'||!c.foursome.length);
+  if (bad.length) {
+    const list = bad.map(({i})=>`Foursome ${i+1}`).join(', ');
+    if (!confirm(`${list} failed to read and will be excluded — continue?`)) return;
+  }
+
   const body = document.getElementById('review-body');
   // Clear and rebuild, keeping the action buttons at bottom
   body.innerHTML = '';
@@ -1653,7 +1728,7 @@ function renderRecon() {
       <div class="rtc-header">
         <div style="display:flex;align-items:center;gap:8px;">
           <span class="team-chip" style="background:${team.color}"></span>
-          <input class="rtc-name-input" type="text" value="${team.name}"
+          <input class="rtc-name-input" type="text" value="${esc(team.name)}"
             onchange="G.teams[${ti}].name=this.value;renderRecon()">
         </div>
         <span class="rtc-count">${assigned.length} player${assigned.length!==1?'s':''}</span>
@@ -1664,7 +1739,7 @@ function renderRecon() {
           : assigned.map(p=>`
             <span class="player-chip" style="border-color:${team.color}33;">
               <span class="team-chip" style="background:${team.color};width:6px;height:6px;"></span>
-              ${p.name}
+              ${esc(p.name)}
             </span>`).join('')}
       </div>
     `;
@@ -1696,17 +1771,17 @@ function renderRecon() {
     const row = document.createElement('div');
     row.className = 'pool-player';
     const wcOptions = G.teams.map((t,ti)=>
-      `<option value="${ti}" ${p.wildcardTeamIdx===ti?'selected':''}>${t.name}</option>`
+      `<option value="${ti}" ${p.wildcardTeamIdx===ti?'selected':''}>${esc(t.name)}</option>`
     ).join('');
     row.innerHTML = `
       <div class="pp-info">
-        <div class="pp-name">${p.name}${p.wildcardTeamIdx!==null?`<span class="wildcard-badge">wildcard</span>`:''}</div>
+        <div class="pp-name">${esc(p.name)}${p.wildcardTeamIdx!==null?`<span class="wildcard-badge">wildcard</span>`:''}</div>
         <div class="pp-sub">IDX ${p.hcp} · <button class="tee-chip ${p.tee||'white'}" onclick="togglePoolTee(${idx})">${teeLabel(p)}</button> · CH ${courseHcp(p)}${p.cardIdx>=0?` · Foursome ${p.cardIdx+1}`:''}</div>
       </div>
       <div class="pool-player-assignments">
         <select class="team-mini-select" onchange="G.reconPool[${idx}].teamIdx=parseInt(this.value)<0?null:parseInt(this.value);renderReconTeamsOnly()">
           <option value="-1">— Unassigned —</option>
-          ${G.teams.map((t,ti)=>`<option value="${ti}" ${p.teamIdx===ti?'selected':''}>${t.name}</option>`).join('')}
+          ${G.teams.map((t,ti)=>`<option value="${ti}" ${p.teamIdx===ti?'selected':''}>${esc(t.name)}</option>`).join('')}
         </select>
         <select class="wildcard-select" onchange="G.reconPool[${idx}].wildcardTeamIdx=parseInt(this.value)<0?null:parseInt(this.value);renderRecon()">
           <option value="-1">+ Wildcard for…</option>
@@ -1766,8 +1841,8 @@ function renderReconTeamsOnly() {
     const playersEl = document.querySelectorAll('.recon-team-card')[ti]?.querySelector('.rtc-players');
     const countEl   = document.querySelectorAll('.recon-team-card')[ti]?.querySelector('.rtc-count');
     if (playersEl) {
-      const chips = assigned.map(p=>`<span class="player-chip" style="border-color:${team.color}33;"><span class="team-chip" style="background:${team.color};width:6px;height:6px;"></span>${p.name}</span>`);
-      const wcChips = wildcards.map(p=>`<span class="player-chip" style="border-color:rgba(200,168,75,0.4);"><span style="font-size:9px;">⭐</span>${p.name}<span class="wildcard-badge">wc</span></span>`);
+      const chips = assigned.map(p=>`<span class="player-chip" style="border-color:${team.color}33;"><span class="team-chip" style="background:${team.color};width:6px;height:6px;"></span>${esc(p.name)}</span>`);
+      const wcChips = wildcards.map(p=>`<span class="player-chip" style="border-color:rgba(200,168,75,0.4);"><span style="font-size:9px;">⭐</span>${esc(p.name)}<span class="wildcard-badge">wc</span></span>`);
       playersEl.innerHTML = (chips.length===0 && wcChips.length===0)
         ? '<span class="empty-team">No players assigned</span>'
         : [...chips, ...wcChips].join('');
@@ -1836,7 +1911,7 @@ function openModal() {
   const opts = document.getElementById('modal-team-opts');
   opts.innerHTML = G.teams.map((t,i)=>`
     <button class="modal-team-opt" onclick="G.modalTeam=${i};document.querySelectorAll('.modal-team-opt').forEach(b=>b.classList.remove('on'));this.classList.add('on')">
-      <span class="team-chip" style="background:${t.color}"></span>${t.name}
+      <span class="team-chip" style="background:${t.color}"></span>${esc(t.name)}
     </button>`).join('');
   document.getElementById('add-modal').classList.remove('hidden');
 }
@@ -2257,7 +2332,7 @@ function renderTeamTabs() {
     tab.className='nbt-tab'+(ti===G.viewTeam?' on':'');
     tab.onclick=()=>switchTeamPane(ti);
     tab.innerHTML=`
-      <span class="nbt-name"><span class="team-chip" style="background:${team.color}"></span>${team.name}</span>
+      <span class="nbt-name"><span class="team-chip" style="background:${team.color}"></span>${esc(team.name)}</span>
       <span class="nbt-score">${res.total??'—'}</span>`;
     wrap.appendChild(tab);
   });
@@ -2270,7 +2345,7 @@ function updateNassauBar() {
   function ms(s){
     if(s.winner===null) return`<span class="nb-val tied">A/S</span>`;
     const t=G.teams[s.winner];
-    return`<span class="nb-val" style="color:${t.color}">${t.name} +${s.margin}</span>`;
+    return`<span class="nb-val" style="color:${t.color}">${esc(t.name)} +${s.margin}</span>`;
   }
   document.getElementById('nb-matchups').innerHTML=`
     <div class="nb-cell" style="max-width:none;flex:1;cursor:pointer;" onclick="showBet('scr-scoring')">

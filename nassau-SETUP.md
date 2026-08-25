@@ -57,9 +57,15 @@ Your API key lives here, never in the HTML file.
 
 1. Click **Edit Code**
 2. **Select all** the existing code and **delete it**
-3. Open the file `worker.js` from this folder
+3. Open the file `nassau-worker.js` from this folder
 4. **Copy everything** and paste it into the Cloudflare editor
 5. Click **Save and Deploy**
+
+> **Updating the Worker later?** This update *changes the request contract*
+> between the app and the Worker (the app now sends just the photo and lets
+> the Worker build the AI request). Paste the new `nassau-worker.js` into
+> Cloudflare and **Save and Deploy** *before* using Photo mode on the
+> updated page, or photo uploads will fail against the old Worker.
 
 ### 2d. Add Your API Key as a Secret
 
@@ -77,6 +83,17 @@ Your API key lives here, never in the HTML file.
 1. At the top of the Worker page you'll see a URL like:
    `https://nassau-proxy.YOUR-NAME.workers.dev`
 2. **Copy this URL** — you need it in the next step
+
+### 2f. Set a Monthly Spend Limit (do this — it's your real backstop)
+
+The Worker only accepts requests from your GitHub Pages site, but any
+belt-and-suspenders setup should still cap what a mistake or an abuse
+attempt could cost you:
+
+1. Go to **console.anthropic.com**
+2. Click **Billing** in the left sidebar → **Limits**
+3. Set a monthly spend limit — a few dollars is plenty for a golf group's
+   worth of scorecard photos
 
 ---
 
@@ -97,16 +114,20 @@ GitHub Pages hosts your HTML file for free with a permanent public URL.
 4. Check **Add a README file**
 5. Click **Create repository**
 
-### 3c. Add Your Worker URL to index.html
+### 3c. Add Your Worker URL to nassau-index.html
 
-Before uploading, you need to paste your Worker URL into the app:
+The app itself lives in `nassau-index.html`; `index.html` is just an
+11-line redirect to it (so a bare GitHub Pages URL still lands on the app).
+Before uploading, paste your Worker URL into the real app file:
 
-1. Open `index.html` in a text editor (TextEdit on Mac works)
+1. Open `nassau-index.html` in a text editor (TextEdit on Mac works)
 2. Find this line near the top of the `<script>` section:
    ```
-   const WORKER_URL = 'REPLACE_WITH_YOUR_WORKER_URL';
+   const WORKER_URL = 'https://nassau-proxy.devin-p-fitzpatrick.workers.dev';
    ```
-3. Replace `REPLACE_WITH_YOUR_WORKER_URL` with your actual Worker URL from Step 2e:
+   (It's already filled in for this deployment — only change it if you set
+   up your own Worker under a different name.)
+3. Replace the URL with your actual Worker URL from Step 2e if needed:
    ```
    const WORKER_URL = 'https://nassau-proxy.YOUR-NAME.workers.dev';
    ```
@@ -115,7 +136,9 @@ Before uploading, you need to paste your Worker URL into the app:
 ### 3d. Upload Your Files
 
 1. In your GitHub repository, click **Add file** → **Upload files**
-2. Drag and drop `index.html` into the upload area
+2. Drag and drop **both** `index.html` and `nassau-index.html` into the
+   upload area (uploading only one leaves the redirect pointing at a page
+   that isn't there, or leaves the app itself missing)
 3. Scroll down and click **Commit changes**
 
 ### 3e. Enable GitHub Pages
@@ -169,10 +192,10 @@ Tap it and it opens full-screen, just like a native app.
 
 ## Updating the App in the Future
 
-When there's a new version of `index.html`:
+When there's a new version of `nassau-index.html`:
 
 1. Go to your GitHub repository
-2. Click on `index.html`
+2. Click on `nassau-index.html`
 3. Click the **pencil icon** (Edit)
 4. Select all and replace with new content
    *(or use the upload method from Step 3d)*
@@ -184,8 +207,14 @@ When there's a new version of `index.html`:
 ## Troubleshooting
 
 **AI photo reading not working?**
-- Check that your Worker URL in `index.html` is correct (no trailing slash)
-- Open Safari → your app URL → check for any error messages
+- Check that your Worker URL in `nassau-index.html` is correct (no trailing slash)
+- Each scorecard now shows its own status inline — a failed card shows the
+  actual error message (not just a generic "read error"), and has a ↻ retry
+  and a × delete button right on the card. Retry the specific card before
+  assuming anything else is wrong.
+- If you just pasted an updated `nassau-worker.js` into Cloudflare, confirm
+  you clicked **Save and Deploy** — old Worker code will reject the new
+  app's requests
 - Verify your Anthropic API key is saved correctly in Cloudflare Secrets
 
 **Page not loading on GitHub?**
@@ -199,7 +228,10 @@ When there's a new version of `index.html`:
 
 **Scores not calculating?**
 - Make sure each team has at least one player assigned
-- Check that all hole scores are entered (photo mode: review screen catches blanks)
+- The app now warns you before settling if any holes are missing scores or
+  a team is short-handed for the format — "Settle anyway?" — so a blank
+  hole can't silently hand the money to someone. Fill in what's missing,
+  or confirm you mean to leave it undecided.
 
 ---
 
@@ -207,14 +239,15 @@ When there's a new version of `index.html`:
 
 | File | Purpose | Where it goes |
 |------|---------|---------------|
-| `index.html` | The app itself | GitHub repository root |
-| `worker.js` | Secure API proxy | Cloudflare Workers |
-| `SETUP.md` | This guide | Keep locally for reference |
+| `nassau-index.html` | The app itself | GitHub repository root |
+| `index.html` | 11-line redirect to `nassau-index.html` | GitHub repository root |
+| `nassau-worker.js` | Secure, closed API proxy | Cloudflare Workers |
+| `nassau-SETUP.md` | This guide | Keep locally for reference |
 
 ---
 
 ## Support
 
 Built for Fair Oaks Ranch Nassau games.  
-Questions or bugs → open `index.html` and make adjustments,
+Questions or bugs → open `nassau-index.html` and make adjustments,
 or ask Claude to help you modify specific features.
