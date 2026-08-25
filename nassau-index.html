@@ -478,6 +478,7 @@ input::placeholder { color: rgba(242,246,252,0.2); }
 .prog-dot-bar { width: 100%; height: 2px; border-radius: 2px; background: rgba(255,255,255,0.12); transition: background 0.3s; }
 .prog-dot.done .prog-dot-bar { background: var(--gold); }
 .prog-dot.now .prog-dot-bar { background: var(--sage); }
+.prog-dot.gap .prog-dot-bar { background: var(--red-soft); }
 
 .score-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 14px 16px 170px; padding-left: max(16px, var(--safe-l)); padding-right: max(16px, var(--safe-r)); }
 
@@ -514,6 +515,7 @@ input::placeholder { color: rgba(242,246,252,0.2); }
   width: 30px; text-align: center;
   font-family: 'Cormorant Garamond', serif;
   font-size: 22px; font-weight: 700;
+  cursor: pointer;
 }
 .step-num.eagle { color: #f6e05e; }
 .step-num.birdie { color: #f6ad55; }
@@ -685,7 +687,7 @@ input::placeholder { color: rgba(242,246,252,0.35); }
 
 /* — daylight pass 2 (2026-08-22): bigger type, three-tee toggles — */
 .player-row { grid-template-columns: 1fr 56px 98px 32px; }
-.player-row input[type=number] { padding: 10px 4px; text-align: center; font-size: 15px; }
+.player-row input[type=number] { padding: 10px 4px; text-align: center; font-size: 16px; }
 .tee-btn { padding: 11px 8px; font-size: 11px; }
 .tee-chip { font-size: 11px; }
 .rpc-header { flex-wrap: wrap; row-gap: 8px; }
@@ -1502,6 +1504,7 @@ function retryCard(id) {
   const st = cardStatusMarkup(c);
   const statusEl = document.getElementById(`cstatus-${c.id}`);
   if (statusEl) { statusEl.className = 'sc-status ' + st.cls; statusEl.innerHTML = st.html; }
+  checkUploadReady();
   readCardWithAI(c.id, c.dataUrl);
 }
 
@@ -2183,41 +2186,53 @@ function skins(holes, skinsType) {
   return sk;
 }
 
+// Collapses [3,4,5,9,11,12] into "3–5, 9, 11–12" for warning text.
+function holeRanges(nums) {
+  const ranges=[]; let start=nums[0], prev=start;
+  for (let i=1;i<nums.length;i++) {
+    const n=nums[i];
+    if (n===prev+1) { prev=n; continue; }
+    ranges.push(start===prev?`${start}`:`${start}–${prev}`);
+    start=prev=n;
+  }
+  ranges.push(start===prev?`${start}`:`${start}–${prev}`);
+  return ranges.join(', ');
+}
+
 // Pre-settlement completeness gate — call before computing money.
+// Aggregated per team so a whole-round problem is one line, not eighteen.
+// Plain text only: this feeds confirm(), which renders entities literally.
 function settlementWarnings() {
   const holes = allHoles();
   const warnings = [];
   const noScoreHoles = [];
+  const shortByTeam = G.teams.map(()=>[]);
+  const missingByTeam = G.teams.map(()=>[]);
   let anyHoleScored = false;
 
   holes.forEach((h,hi)=>{
-    const missing = [];
     let anyTotal = false, eligCount = 0;
     G.teams.forEach((t,ti)=>{
       if (t.players.length===0) return;
       eligCount++;
-      const total = h.trs[ti].total;
-      if (total===null) missing.push(t); else anyTotal=true;
-      if (h.trs[ti].short) warnings.push(`Hole ${hi+1}: ${esc(t.name)} short-handed (fewer balls than the format needs)`);
+      if (h.trs[ti].total!==null) anyTotal=true;
     });
     if (anyTotal) anyHoleScored = true;
-    if (anyTotal && missing.length) {
-      warnings.push(`Hole ${hi+1}: no score for ${missing.map(t=>esc(t.name)).join(', ')}`);
-    } else if (!anyTotal && eligCount) {
-      noScoreHoles.push(hi+1);
-    }
+    if (!anyTotal) { if (eligCount) noScoreHoles.push(hi+1); return; }
+    G.teams.forEach((t,ti)=>{
+      if (t.players.length===0) return;
+      if (h.trs[ti].short) shortByTeam[ti].push(hi+1);
+      else if (h.trs[ti].total===null) missingByTeam[ti].push(hi+1);
+    });
+  });
+
+  G.teams.forEach((t,ti)=>{
+    if (shortByTeam[ti].length) warnings.push(`${t.name} short-handed (fewer balls than the format needs) on hole${shortByTeam[ti].length>1?'s':''} ${holeRanges(shortByTeam[ti])}`);
+    if (missingByTeam[ti].length) warnings.push(`No score for ${t.name} on hole${missingByTeam[ti].length>1?'s':''} ${holeRanges(missingByTeam[ti])}`);
   });
 
   if (anyHoleScored && noScoreHoles.length) {
-    const ranges=[]; let start=noScoreHoles[0], prev=start;
-    for (let i=1;i<noScoreHoles.length;i++) {
-      const n=noScoreHoles[i];
-      if (n===prev+1) { prev=n; continue; }
-      ranges.push(start===prev?`${start}`:`${start}–${prev}`);
-      start=prev=n;
-    }
-    ranges.push(start===prev?`${start}`:`${start}–${prev}`);
-    warnings.push(`Holes ${ranges.join(', ')} have no scores and won't count.`);
+    warnings.push(`Holes ${holeRanges(noScoreHoles)} have no scores and won't count.`);
   }
 
   return warnings;
@@ -2235,8 +2250,9 @@ function renderHole() {
   document.getElementById('hole-big').textContent=`Hole ${hole.h}`;
   document.getElementById('hole-meta').textContent=`Par ${hole.par} · HCP ${hole.hcp} · ${c.name}`;
   document.getElementById('hole-fmt').textContent=`Team par ${hole.par*total} · ${G.netCount}N + ${G.grossCount}G`;
+  const AH=allHoles();
   document.getElementById('prog-track').innerHTML=
-    c.holes.map((_,i)=>`<div class="prog-dot${i<hi?' done':i===hi?' now':''}" onclick="G.hole=${i};renderHole();"><span class="prog-dot-bar"></span></div>`).join('');
+    c.holes.map((_,i)=>`<div class="prog-dot${i<hi?' done':i===hi?' now':''}${i!==hi&&AH[i].incomplete?' gap':''}" onclick="G.hole=${i};renderHole();"><span class="prog-dot-bar"></span></div>`).join('');
   document.getElementById('nav-prev').disabled=hi===0;
   const last=hi===17;
   const nb=document.getElementById('btn-next-hole');
@@ -2259,7 +2275,7 @@ function renderHole() {
       <div class="team-block-hdr">
         <div class="tbh-name"><span class="team-chip" style="background:${team.color}"></span>${esc(team.name)}</div>
         <div style="display:flex;align-items:center;gap:8px;">
-          <button class="btn-ghost" style="width:auto;margin:0;padding:5px 9px;font-size:8px;" onclick="fillPar(${ti},${hi})">Fill par</button>
+          <button class="btn-ghost" style="width:auto;margin:0;padding:5px 9px;font-size:10px;" onclick="fillPar(${ti},${hi})">Fill par</button>
           <div class="tbh-score" id="tsum-${ti}">Score: <b>${res.total??'—'}</b> <span class="tbh-par">/ ${res.par} (${ds})</span></div>
         </div>
       </div>
@@ -2567,7 +2583,7 @@ function showResults() {
       const heads=G.teams.map(t=>`<th>${esc(t.name.replace('Team ','T'))}</th>`).join('');
       const rows=holes.map((h,hi)=>{
         const hole=c.holes[hi];
-        const tds=h.trs.map(r=>`<td class="${r.total===h.min&&!h.tie?'ht-win':''}">${r.total??'—'}</td>`).join('');
+        const tds=h.trs.map(r=>`<td class="${r.total!==null&&r.total===h.min&&!h.tie?'ht-win':''}">${r.total??'—'}</td>`).join('');
         const wc=h.winner!==null
           ?`<td class="ht-win" style="color:${G.teams[h.winner].color}">${esc(G.teams[h.winner].name.replace('Team ','T'))}</td>`
           :`<td class="${h.tie?'ht-tie':''}">${h.tie?'TIE':'—'}</td>`;
@@ -2647,8 +2663,20 @@ function viewLastRound() {
   let snap;
   try { snap = JSON.parse(localStorage.getItem(LAST_ROUND_KEY)); } catch(e) { return; }
   if (!snap || !snap.G) return;
+  // Opening the archive replaces the live round in G AND, via showResults()'s
+  // saveState(), the resume save — never do that silently over real data.
+  let hasLive = anyScoresEntered(G.scores) || G.cards.length > 0;
+  try {
+    const sv = JSON.parse(localStorage.getItem(SAVE_KEY));
+    hasLive = hasLive || !!(sv && sv.G && (['scr-scoring','scr-upload','scr-review','scr-reconcile','scr-results'].includes(sv.phase) || anyScoresEntered(sv.G.scores)));
+  } catch(e) {}
+  if (hasLive && !confirm('Open the archived round? The round in progress will be closed and can no longer be resumed.')) return;
   Object.assign(G, snap.G);
   G.cards.forEach(c => { if (!c.dataUrl) c.dataUrl = CARD_PLACEHOLDER; });
+  selectCourse(G.courseId);
+  selectMode(G.mode || 'photo');
+  syncSegs();
+  if (G.mode === 'manual') rebuildManualTeamsDOM();
   showResults();
 }
 
