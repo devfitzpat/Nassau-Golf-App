@@ -1,0 +1,9 @@
+{
+  // Cloudflare Workers Builds reads this on every push to main and deploys
+  // nassau-worker.js as the worker "nassau-golf-app" (the git-connected
+  // worker in the 1857enterprises account). The ANTHROPIC_API_KEY secret
+  // lives on the worker in the dashboard, not in this repo.
+  "name": "nassau-golf-app",
+  "main": "nassau-worker.js",
+  "compatibility_date": "2026-08-01"
+}

@@ -46,26 +46,27 @@ Your API key lives here, never in the HTML file.
 2. Sign up for a free account (no credit card needed)
 3. Verify your email
 
-### 2b. Create the Worker
+### 2b. Create the Worker (connected to GitHub)
+
+This deployment uses Cloudflare's **git-connected Workers**: the Worker is
+tied to the GitHub repo, and every push to `main` automatically redeploys
+`nassau-worker.js` (the repo's `wrangler.jsonc` tells Cloudflare which file
+is the Worker). No pasting code into the dashboard.
 
 1. In the Cloudflare dashboard, click **Workers & Pages** in the left sidebar
-2. Click **Create** → **Create Worker**
-3. Give it a name: `nassau-proxy`
-4. Click **Deploy** (ignore the default code for now)
+2. Click **Create** → **Import a repository**, and connect the app's GitHub repo
+3. Name it `nassau-golf-app` and deploy — from then on it updates itself on
+   every push to `main`
 
-### 2c. Paste the Worker Code
+### 2c. Enable the Worker's URL
 
-1. Click **Edit Code**
-2. **Select all** the existing code and **delete it**
-3. Open the file `nassau-worker.js` from this folder
-4. **Copy everything** and paste it into the Cloudflare editor
-5. Click **Save and Deploy**
+1. On the Worker's page, open **Settings** → **Domains & Routes**
+2. Enable the **workers.dev** route — the URL will look like:
+   `https://nassau-golf-app.YOUR-SUBDOMAIN.workers.dev`
 
-> **Updating the Worker later?** This update *changes the request contract*
-> between the app and the Worker (the app now sends just the photo and lets
-> the Worker build the AI request). Paste the new `nassau-worker.js` into
-> Cloudflare and **Save and Deploy** *before* using Photo mode on the
-> updated page, or photo uploads will fail against the old Worker.
+> **Updating the Worker later?** Just push to `main` — Cloudflare rebuilds
+> and deploys it automatically. Check the **Deployments** tab on the Worker
+> if photo mode ever fails right after a change.
 
 ### 2d. Add Your API Key as a Secret
 
@@ -80,8 +81,8 @@ Your API key lives here, never in the HTML file.
 
 ### 2e. Copy Your Worker URL
 
-1. At the top of the Worker page you'll see a URL like:
-   `https://nassau-proxy.YOUR-NAME.workers.dev`
+1. It's the workers.dev URL you enabled in Step 2c, like:
+   `https://nassau-golf-app.YOUR-SUBDOMAIN.workers.dev`
 2. **Copy this URL** — you need it in the next step
 
 ### 2f. Set a Monthly Spend Limit (do this — it's your real backstop)
@@ -123,13 +124,13 @@ Before uploading, paste your Worker URL into the real app file:
 1. Open `nassau-index.html` in a text editor (TextEdit on Mac works)
 2. Find this line near the top of the `<script>` section:
    ```
-   const WORKER_URL = 'https://nassau-proxy.devin-p-fitzpatrick.workers.dev';
+   const WORKER_URL = 'https://nassau-golf-app.1857enterprises.workers.dev';
    ```
    (It's already filled in for this deployment — only change it if you set
    up your own Worker under a different name.)
 3. Replace the URL with your actual Worker URL from Step 2e if needed:
    ```
-   const WORKER_URL = 'https://nassau-proxy.YOUR-NAME.workers.dev';
+   const WORKER_URL = 'https://nassau-golf-app.YOUR-SUBDOMAIN.workers.dev';
    ```
 4. Save the file
 
@@ -212,9 +213,9 @@ When there's a new version of `nassau-index.html`:
   actual error message (not just a generic "read error"), and has a ↻ retry
   and a × delete button right on the card. Retry the specific card before
   assuming anything else is wrong.
-- If you just pasted an updated `nassau-worker.js` into Cloudflare, confirm
-  you clicked **Save and Deploy** — old Worker code will reject the new
-  app's requests
+- If you just pushed a change to `nassau-worker.js`, check the Worker's
+  **Deployments** tab in Cloudflare — the git-connected build must finish
+  before Photo mode works against the new code
 - Verify your Anthropic API key is saved correctly in Cloudflare Secrets
 
 **Page not loading on GitHub?**
