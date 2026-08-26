@@ -69,6 +69,17 @@ export default {
       return new Response(null, { status: 204, headers: corsHeaders(origin) });
     }
 
+    // Health check: reports which bindings the live worker actually sees
+    // (names only — never values), for diagnosing secret-setup problems.
+    if (request.method === 'GET') {
+      return json({
+        ok: true,
+        hasKey: !!env.ANTHROPIC_API_KEY,
+        looksLikeKey: /^sk-ant-/.test(env.ANTHROPIC_API_KEY || ''),
+        bindings: Object.keys(env || {})
+      }, 200, origin);
+    }
+
     if (request.method !== 'POST') {
       return json({ error: 'Method not allowed' }, 405, origin);
     }
